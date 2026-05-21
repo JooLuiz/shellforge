@@ -90,33 +90,96 @@ O comando `login` abre um browser e faz o login de acordo com as configurações
 
 #### 3.1.2 Configuração
 
-Antes de usar o comando `login`, é necessário configurar as ações desejadas. Para isso é preciso criar o arquivo `config.json` no diretório `./config/`, Há um exemplo de como deve ser esse config na mesma pasta e ele é desse jeito:
+Antes de usar o comando `login`, é necessário configurar as ações desejadas. Para isso é preciso criar o arquivo `config.json` no diretório `./config/`. Há um exemplo na mesma pasta (`config-example.json`).
+
+Cada ação em `browserAutomation` aceita um destes formatos:
+
+**Login simples (campos planos / legado)** — usuário, senha e enviar:
 
 ```json
 {
-  "browseAndLogin": {
-    "[actions]": {
-      "url": "",
-      "usernameInput": "",
-      "usernameValue": "",
-      "passwordInput": "",
-      "passwordValue": "",
-      "loginButton": ""
+  "browserAutomation": {
+    "logar-email": {
+      "url": "https://example.com/login",
+      "usernameInput": "#email",
+      "usernameValue": "user@example.com",
+      "passwordInput": "#password",
+      "passwordValue": "sua-senha",
+      "loginButton": "#submit"
     }
   }
 }
 ```
 
-Digamos, então, que você quer fazer um comando que loga no seu email, para isso basta mudar onde está "[action]" por "logar-email" e preencher os outros campos de acordo com os ids do formulário de acesso e seus dados.
+**Login em várias etapas (`steps`)** — use quando precisar de cliques extras, esperas ou ordem customizada (ex.: clicar em "Próximo" após o usuário):
 
-> **_DICA:_**  como o browseAndLogin é um objeto de objetos você pode ter `n` ações de login para diferentes sites, desde que as adicionem no arquivo config devidamente.
+```json
+{
+  "browserAutomation": {
+    "login-multi-etapas": {
+      "steps": [
+        { "action": "navigate", "url": "https://example.com/login" },
+        { "action": "type", "selector": "#username", "value": "seu-usuario" },
+        { "action": "click", "selector": "#nextBtn", "waitForSelector": "#password" },
+        { "action": "type", "selector": "#password", "value": "sua-senha" },
+        { "action": "click", "selector": "#loginbtn" }
+      ]
+    }
+  }
+}
+```
+
+Valores suportados em `action` de cada passo:
+
+| action     | campos obrigatórios     | campos opcionais                              |
+| ---------- | ----------------------- | --------------------------------------------- |
+| `navigate` | `url`                   | —                                             |
+| `type`     | `selector`, `value`     | —                                             |
+| `click`    | `selector`              | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, padrão 30000) |
+| `wait`     | `ms`, `selector`, `urlContains` ou `waitForLoading` | `timeout` (ao usar `selector`, `urlContains` ou `waitForLoading`) |
+| `setWebStorage` | ao menos um entre `localStorage`, `sessionStorage` ou `cookies` | — |
+| `closeBrowser` | — | — |
+
+**`setWebStorage`** injeta dados no web storage ou cookies do navegador. Útil para pré-autenticar sessões que exigem fluxos de login complexos (ex.: códigos OTP). Valores que são objetos ou arrays são automaticamente convertidos com `JSON.stringify` antes de serem armazenados. Cookies usam o formato nativo do `page.setCookie()` do Puppeteer.
+
+Exemplo:
+
+```json
+{
+  "action": "setWebStorage",
+  "localStorage": {
+    "token": "seu-jwt-token",
+    "user": { "id": "123", "name": "joao" }
+  }
+}
+```
+
+> **_NOTA:_** `setWebStorage` deve ser usado **após** um passo `navigate` para o domínio alvo, pois localStorage/sessionStorage está vinculado à origem da página. Para aplicar a sessão injetada, adicione outro passo `navigate` após `setWebStorage` para recarregar a página.
+
+**`closeBrowser`** fecha o navegador de forma controlada. Geralmente usado como último passo de uma ação.
+
+Todos os passos com seletor esperam o elemento ficar **visível** (não só existir no DOM). Em formulários multi-etapas, use `waitForSelector` que só aparece após o passo anterior (ex.: `#password-input-group:not(.hidden) #password-input-field`).
+
+Os seletores são CSS padrão. Para ids dinâmicos, use seletores por atributo:
+
+| Padrão | Exemplo |
+| ------ | ------- |
+| id começa com | `[id^="btn-clocking-event"]` |
+| id contém | `[id*="btn-clocking-event"]` |
+| id termina com | `[id$="-menu"]` |
+
+Após redirect de login, use `waitForNavigation: true` no clique de login, depois `wait` com `urlContains` (ex.: `"senior-x"`) e `waitForLoading: true` antes de clicar na nova tela. O Senior X exibe overlays `s-loading-state` que bloqueiam cliques mesmo com o botão no DOM. O runner espera os loaders sumirem e o elemento ficar clicável (sem overlay por cima).
+
+Se a ação tiver `steps`, esse array é usado. Caso contrário, os campos planos viram o fluxo padrão de quatro passos automaticamente.
+
+> **_DICA:_**  como o browserAutomation é um objeto de objetos você pode ter `n` ações de login para diferentes sites, desde que as adicionem no arquivo config devidamente.
 
 Agora é preciso configurar o comando no seu `$PROFILE`, como já foi mencionado no step 1.2 desde README.
 
 Assim, basta adicionar o seguinte código no `$PROFILE`:
 
 ```powershell
-New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browse-and-login\browse-and-login.bat
+New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browser-automation\browser-automation.bat
 
 Function logar-email {
     param (
@@ -139,7 +202,7 @@ Function logar-email {
 }
 ```
 
-O que essa configuração faz é definir um alias chamado login que roda o arquivo browse-and-login.bat que está nesse repositório e depois cria uma função que executa o comando "login" recem criado passando por padrão o argumento `--action=logar-email`. Ou seja os seguintes comandos são equivalentes:
+O que essa configuração faz é definir um alias chamado login que roda o arquivo browser-automation.bat que está nesse repositório e depois cria uma função que executa o comando "login" recem criado passando por padrão o argumento `--action=logar-email`. Ou seja os seguintes comandos são equivalentes:
 
 ```
 login --action=logar-email
@@ -213,6 +276,43 @@ De forma semelhante ao comando anterior e conforme mencionado na seção 1.2 des
 ```powershell
 New-Alias -Name scheduler -Value Caminho\Para\Seu\Repositório\Clonado\scheduler\scheduler.bat
 ```
+
+### 3.5 Tarefas Agendadas
+
+#### 3.5.1 Especificações
+
+A pasta `scheduled-tasks/` contém um script PowerShell de exemplo que cria uma Tarefa Agendada do Windows para executar qualquer comando customizado em um cronograma recorrente. Ele utiliza `Register-ScheduledTask` para criar uma tarefa com gatilhos semanais configuráveis. A tarefa carrega seu `$PROFILE` antes de executar para que funções e aliases customizados estejam disponíveis.
+
+Você pode encontrar o exemplo em `scheduled-tasks/setup-scheduled-task.example.ps1`.
+
+#### 3.5.2 Configuração
+
+1. Copie o arquivo de exemplo e renomeie-o (ex.: `setup-minha-tarefa.ps1`).
+2. Abra a cópia e substitua os placeholders:
+   - `$TaskName` — defina um nome único para sua tarefa agendada.
+   - `$triggerTimes` — defina os horários em que deseja que a tarefa seja disparada (formato 24h).
+   - `$weekdays` — defina os dias da semana.
+   - `{{YOUR_COMMAND_HERE}}` — substitua pelo comando ou função que deseja executar (ex.: uma função definida no seu `$PROFILE`).
+
+3. Execute o script uma vez em um terminal PowerShell **elevado** (Administrador):
+
+```powershell
+.\scheduled-tasks\setup-minha-tarefa.ps1
+```
+
+Para remover a tarefa agendada:
+
+```powershell
+.\scheduled-tasks\setup-minha-tarefa.ps1 -Remove
+```
+
+Você pode verificar se a tarefa foi criada com:
+
+```powershell
+Get-ScheduledTask -TaskName "YourTaskName" | Get-ScheduledTaskInfo
+```
+
+> **_NOTA:_** certifique-se de que o comando referenciado já está definido no seu `$PROFILE` antes de executar o script de configuração, pois a tarefa agendada depende dele.
 
 ---
 

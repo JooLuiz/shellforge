@@ -1,7 +1,7 @@
 const consts = {
   identification: {
     scheduler: "[Scheduler]",
-    browseAndLogin: "[Browse and Login]",
+    browserAutomation: "[Browser Automation]",
     getArgValue: "[Utils - Get Arg Value]",
     convertCSVToJson: "[Utils - Convert CSV To Json]",
     saveNewFile: "[Utils - Write In File]",

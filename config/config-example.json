@@ -1,12 +1,39 @@
 {
-  "browseAndLogin": {
-    "[actions]": {
-      "url": "",
-      "usernameInput": "",
-      "usernameValue": "",
-      "passwordInput": "",
-      "passwordValue": "",
-      "loginButton": ""
+  "browserAutomation": {
+    "log-email": {
+      "url": "https://example.com/login",
+      "usernameInput": "#email",
+      "usernameValue": "user@example.com",
+      "passwordInput": "#password",
+      "passwordValue": "your-password",
+      "loginButton": "#submit"
+    },
+    "multi-step-login": {
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://example.com/login"
+        },
+        {
+          "action": "type",
+          "selector": "#username-input-field",
+          "value": "your-username"
+        },
+        {
+          "action": "click",
+          "selector": "#nextBtn",
+          "waitForSelector": "#password-input-group:not(.hidden) #password-input-field"
+        },
+        {
+          "action": "type",
+          "selector": "#password-input-field",
+          "value": "your-password"
+        },
+        {
+          "action": "click",
+          "selector": "#loginbtn"
+        }
+      ]
     }
   },
   "scheduler": {

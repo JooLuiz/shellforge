@@ -1,4 +1,6 @@
 const { getConfigs, logger, getArgValue, consts, createPuppeteerBrowser } = require("../utils");
+const { normalizeSteps } = require("./normalizeSteps");
+const { runSteps } = require("./runSteps");
 
 const isVerbose = getArgValue("--verbose", "equals");
 
@@ -6,11 +8,11 @@ const actionArgument = getArgValue("action=", "contains", true);
 
 const logInfo = (data) => {
   if (isVerbose) {
-    logger("info", consts.identification.browseAndLogin)(data);
+    logger("info", consts.identification.browserAutomation)(data);
   }
 };
 
-const logError = logger("error", consts.identification.browseAndLogin);
+const logError = logger("error", consts.identification.browserAutomation);
 
 if (!actionArgument) {
   logError(consts.missingActionMsg);
@@ -21,7 +23,7 @@ function getAction(action) {
   return action.replace("action=", "");
 }
 
-async function browseAndLogin() {
+async function browserAutomation() {
   const configs = await getConfigs();
 
   if (!configs) {
@@ -31,14 +33,17 @@ async function browseAndLogin() {
 
   const action = getAction(actionArgument);
 
-  if (!configs.browseAndLogin[action]) {
+  if (!configs.browserAutomation[action]) {
     logError(consts.missingConfigMsg);
     throw new Error(consts.missingConfigMsg);
   }
 
+  const actionConfig = configs.browserAutomation[action];
+  const steps = normalizeSteps(actionConfig, action);
+
   logInfo("Config successfully loaded");
 
-  const browser = await createPuppeteerBrowser(isVerbose)
+  const browser = await createPuppeteerBrowser(isVerbose);
   const page = await browser.newPage();
 
   await page.setViewport({
@@ -48,30 +53,9 @@ async function browseAndLogin() {
 
   logInfo("Opened Default Browser");
 
-  const {
-    url,
-    usernameInput,
-    usernameValue,
-    passwordInput,
-    passwordValue,
-    loginButton,
-  } = configs.browseAndLogin[action];
+  await runSteps(browser, page, steps, logInfo);
 
-  await page.goto(url);
-
-  logInfo("Navigated to specified URL");
-
-  await page.type(usernameInput, usernameValue);
-
-  logInfo("Filled username input");
-
-  await page.type(passwordInput, passwordValue);
-
-  logInfo("Filled password input");
-
-  await page.click(loginButton);
-
-  logInfo("Clicked login button");
+  logInfo("All steps completed");
 }
 
-browseAndLogin();
+browserAutomation();

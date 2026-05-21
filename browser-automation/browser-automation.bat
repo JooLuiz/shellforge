@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set JS_FILE="%~dp0\browse-and-login.js"
+set JS_FILE="%~dp0\browser-automation.js"
 
 set argCount=0
 set isVerbose=
@@ -30,12 +30,12 @@ for %%x in (%*) do (
 if defined hasAction (
   call set "action_value=action=%%argVec[%actionIndex%]%%"
 ) else (
-  echo [ERROR] - [Browse and Login] - Missing the mandatory parameter --action or -a.
+  echo [ERROR] - [Browser Automation] - Missing the mandatory parameter --action or -a.
   exit
 )
 
 if defined isVerbose (
-  echo [INFO] - [Browse and Login] - Verbose mode activated.
+  echo [INFO] - [Browser Automation] - Verbose mode activated.
   node %JS_FILE% --verbose "%action_value%"
 ) else (
   node %JS_FILE% "%action_value%"

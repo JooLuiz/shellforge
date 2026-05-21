@@ -89,33 +89,96 @@ The `login` command opens a browser and logs in according to the settings. It ac
 
 #### 3.1.2 Configuration
 
-Before using the `login` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder, and it is structured like this:
+Before using the `login` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder (`config-example.json`).
+
+Each action under `browserAutomation` supports one of two formats:
+
+**Simple login (legacy flat fields)** — username, password, then submit:
 
 ```json
 {
-  "browseAndLogin": {
-    "[actions]": {
-      "url": "",
-      "usernameInput": "",
-      "usernameValue": "",
-      "passwordInput": "",
-      "passwordValue": "",
-      "loginButton": ""
+  "browserAutomation": {
+    "log-email": {
+      "url": "https://example.com/login",
+      "usernameInput": "#email",
+      "usernameValue": "user@example.com",
+      "passwordInput": "#password",
+      "passwordValue": "your-password",
+      "loginButton": "#submit"
     }
   }
 }
 ```
 
-Let's say you want to create a command that logs into your email. To do this, just replace "[action]" with "log-email" and fill in the other fields according to the access form IDs and your data.
+**Multi-step login (`steps` array)** — use when you need extra clicks, waits, or a custom order (e.g. click "Next" after username):
 
-> **_TIP:_** as browseAndLogin is an object of objects, you can have `n` login actions for different sites, as long as you add them to the config file properly.
+```json
+{
+  "browserAutomation": {
+    "multi-step-login": {
+      "steps": [
+        { "action": "navigate", "url": "https://example.com/login" },
+        { "action": "type", "selector": "#username", "value": "your-username" },
+        { "action": "click", "selector": "#nextBtn", "waitForSelector": "#password" },
+        { "action": "type", "selector": "#password", "value": "your-password" },
+        { "action": "click", "selector": "#loginbtn" }
+      ]
+    }
+  }
+}
+```
+
+Supported step `action` values:
+
+| action    | required fields        | optional fields                          |
+| --------- | ---------------------- | ---------------------------------------- |
+| `navigate`| `url`                  | —                                        |
+| `type`    | `selector`, `value`    | —                                        |
+| `click`   | `selector`             | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, default 30000) |
+| `wait`    | `ms`, `selector`, `urlContains`, or `waitForLoading` | `timeout` (when using `selector`, `urlContains`, or `waitForLoading`) |
+| `setWebStorage` | at least one of `localStorage`, `sessionStorage`, or `cookies` | — |
+| `closeBrowser` | — | — |
+
+**`setWebStorage`** injects data into the browser's web storage or cookies. This is useful for pre-authenticating sessions that require complex login flows (e.g. OTP codes). Values that are objects or arrays are automatically `JSON.stringify`-ed before being stored. Cookies use Puppeteer's native `page.setCookie()` format.
+
+Example:
+
+```json
+{
+  "action": "setWebStorage",
+  "localStorage": {
+    "token": "your-jwt-token",
+    "user": { "id": "123", "name": "john" }
+  }
+}
+```
+
+> **_NOTE:_** `setWebStorage` must be used **after** a `navigate` step to the target domain, since localStorage/sessionStorage is bound to the page origin. To apply the injected session, add another `navigate` step after `setWebStorage` to reload the page.
+
+**`closeBrowser`** gracefully closes the browser instance. Typically used as the last step in an action.
+
+All selector-based steps wait until the element is **visible** (not only present in the DOM). For multi-step forms, use `waitForSelector` targets that only appear after the previous step (e.g. `#password-input-group:not(.hidden) #password-input-field`).
+
+Selectors are standard CSS. For dynamic ids, use attribute selectors instead of a fixed `#id`:
+
+| Pattern | Selector example |
+| ------- | ---------------- |
+| id starts with | `[id^="btn-clocking-event"]` |
+| id contains | `[id*="btn-clocking-event"]` |
+| id ends with | `[id$="-menu"]` |
+
+After a login redirect, use `waitForNavigation: true` on the login click, then a separate `wait` with `urlContains` (e.g. `"senior-x"`), then `waitForLoading: true` before clicking elements on the new app shell. Senior X shows `s-loading-state` overlays that block clicks even when the button is already in the DOM. The runner waits until loaders are gone and the element is interactable (not covered by an overlay).
+
+If an action defines `steps`, that array is used. Otherwise the flat fields are converted automatically to the default four-step flow.
+
+> **_TIP:_** as browserAutomation is an object of objects, you can have `n` login actions for different sites, as long as you add them to the config file properly.
 
 Now you need to configure the command in your `$PROFILE`, as mentioned in step 1.2 of this README.
 
 So, just add the following code to `$PROFILE`:
 
 ```powershell
-New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browse-and-login\browse-and-login.bat
+New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browser-automation\browser-automation.bat
 
 Function log-email {
     param (
@@ -138,7 +201,7 @@ Function log-email {
 }
 ```
 
-What this configuration does is define an alias called login that runs the browse-and-login.bat file in this repository, then creates a function that executes the newly created "login" command, passing by default the argument `--action=log-email`. So, the following commands are equivalent:
+What this configuration does is define an alias called login that runs the browser-automation.bat file in this repository, then creates a function that executes the newly created "login" command, passing by default the argument `--action=log-email`. So, the following commands are equivalent:
 
 ```shell
 login --action=log-email
@@ -211,6 +274,43 @@ Similarly to the previous command and as mentioned in section 1.2 of this README
 ```powershell
 New-Alias -Name scheduler -Value Path\To\Your\Cloned\Repo\scheduler\scheduler.bat
 ```
+
+### 3.5 Scheduled Tasks
+
+#### 3.5.1 Specifications
+
+The `scheduled-tasks/` folder contains an example PowerShell script that creates a Windows Scheduled Task to run any custom command on a recurring schedule. It uses `Register-ScheduledTask` to create a task with configurable weekly triggers. The task loads your `$PROFILE` before executing so that custom functions and aliases are available.
+
+You can find the example at `scheduled-tasks/setup-scheduled-task.example.ps1`.
+
+#### 3.5.2 Configuration
+
+1. Copy the example file and rename it (e.g. `setup-my-task.ps1`).
+2. Open the copy and replace the placeholders:
+   - `$TaskName` — set a unique name for your scheduled task.
+   - `$triggerTimes` — set the times you want it to trigger (24h format).
+   - `$weekdays` — set the days of the week.
+   - `{{YOUR_COMMAND_HERE}}` — replace with the command or function you want to run (e.g. a function defined in your `$PROFILE`).
+
+3. Run the script once from an **elevated** (Administrator) PowerShell terminal:
+
+```powershell
+.\scheduled-tasks\setup-my-task.ps1
+```
+
+To remove a scheduled task:
+
+```powershell
+.\scheduled-tasks\setup-my-task.ps1 -Remove
+```
+
+You can verify the task was created with:
+
+```powershell
+Get-ScheduledTask -TaskName "YourTaskName" | Get-ScheduledTaskInfo
+```
+
+> **_NOTE:_** make sure the command you reference is already defined in your `$PROFILE` before running the setup script, since the scheduled task depends on it.
 
 # Other versions
 
