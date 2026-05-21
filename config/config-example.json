@@ -34,6 +34,73 @@
           "selector": "#loginbtn"
         }
       ]
+    },
+    "lancar-horas-clockify": {
+      "steps": [
+        {
+          "action": "navigate",
+          "url": "https://app.clockify.me/login"
+        },
+        {
+          "action": "setWebStorage",
+          "localStorage": {
+            "token": "your-clockify-token",
+            "userId": "your-user-id"
+          }
+        },
+        {
+          "action": "navigate",
+          "url": "https://app.clockify.me/calendar"
+        },
+        {
+          "action": "wait",
+          "selector": "weekly-view",
+          "timeout": 10000
+        },
+        {
+          "action": "forEachElement",
+          "selector": ".cl-calendar-entry.cl-calendar-entry-integration.cl-p-0",
+          "textContentSelector": ".cl-h-100.z-index-on-top",
+          "excludeTextPatterns": ["OOO", "Almoço"],
+          "clickSelector": ".cl-calendar-integrations-icons",
+          "skipIfPositionMatch": {
+            "scopeSelector": ".drop-zone",
+            "matchSelector": ".cl-calendar-entry:not(.cl-calendar-entry-integration)"
+          },
+          "steps": [
+            {
+              "action": "wait",
+              "selector": "ngb-modal-window",
+              "timeout": 5000
+            },
+            {
+              "action": "click",
+              "selector": "button[data-cy='project']"
+            },
+            {
+              "action": "wait",
+              "selector": "project-picker"
+            },
+            {
+              "action": "click",
+              "selector": "button.cl-btn-project-picker[title='Office Depot - VTEX Migration']"
+            },
+            {
+              "action": "wait",
+              "ms": 500
+            },
+            {
+              "action": "click",
+              "selector": "button.cl-btn-primary",
+              "jsClick": true
+            },
+            {
+              "action": "wait",
+              "ms": 1000
+            }
+          ]
+        }
+      ]
     }
   },
   "scheduler": {

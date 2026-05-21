@@ -14,6 +14,7 @@ const STEP_REQUIRED_FIELDS = {
   wait: [],
   setWebStorage: [],
   closeBrowser: [],
+  forEachElement: ["selector", "steps"],
 };
 
 function formatStepError(actionName, stepIndex, message) {
@@ -36,7 +37,7 @@ function validateStep(step, actionName, stepIndex) {
       formatStepError(
         actionName,
         stepIndex,
-        `unknown action "${step.action}". Supported: navigate, type, click, wait, setWebStorage, closeBrowser`
+        `unknown action "${step.action}". Supported: navigate, type, click, wait, setWebStorage, closeBrowser, forEachElement`
       )
     );
   }
@@ -80,6 +81,22 @@ function validateStep(step, actionName, stepIndex) {
         )
       );
     }
+  }
+
+  if (step.action === "forEachElement") {
+    if (!Array.isArray(step.steps) || step.steps.length === 0) {
+      throw new Error(
+        formatStepError(
+          actionName,
+          stepIndex,
+          'forEachElement requires a non-empty "steps" array'
+        )
+      );
+    }
+
+    step.steps.forEach((subStep, subIndex) =>
+      validateStep(subStep, actionName, `${stepIndex}.${subIndex + 1}`)
+    );
   }
 }
 
