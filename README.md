@@ -76,29 +76,38 @@ npm install
 
 ## 3. Available Commands
 
-### 3.1 login
+### 3.1 action-runner
 
 #### 3.1.1 Specifications
 
-The `login` command opens a browser and logs in according to the settings. It accepts the following parameters:
+The `action-runner` command executes one action flow from `actionRunner`, which can include browser automation, API requests, and shell commands. It accepts the following parameters:
 
-| Long Parameter | Short Parameter | Required | Description                                        |
-| -------------- | --------------- | -------- | -------------------------------------------------- |
-| --action       | -a              | YES      | Indicates the action the login will perform        |
-| --verbose      | -v              | NO       | Indicates whether to display logs during execution |
+| Long Parameter       | Short Parameter | Required | Description                                         |
+| -------------------- | --------------- | -------- | --------------------------------------------------- |
+| --action             | -a              | YES      | Indicates the action the action-runner will perform |
+| --verbose            | -v              | NO       | Indicates whether to display logs during execution  |
+| --arg.\<name\>=value | —               | NO       | Passes a custom argument into the action's context  |
+
+**Custom arguments** let you pass values from the CLI into any action. For example:
+
+```powershell
+action-runner --action=perform-api-request "--arg.message=Hello from CLI"
+```
+
+Inside the action, `{{context.message}}` resolves to `"Hello from CLI"` (after a `getArguments` step maps it).
 
 #### 3.1.2 Configuration
 
-Before using the `login` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder (`config-example.json`).
+Before using the `action-runner` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder (`config-example.json`).
 
-Each action under `browserAutomation` supports one of two formats:
+Each action under `actionRunner` supports one of two formats:
 
 **Simple login (legacy flat fields)** — username, password, then submit:
 
 ```json
 {
-  "browserAutomation": {
-    "log-email": {
+  "actionRunner": {
+    "simple-login": {
       "url": "https://example.com/login",
       "usernameInput": "#email",
       "usernameValue": "user@example.com",
@@ -114,12 +123,16 @@ Each action under `browserAutomation` supports one of two formats:
 
 ```json
 {
-  "browserAutomation": {
+  "actionRunner": {
     "multi-step-login": {
       "steps": [
         { "action": "navigate", "url": "https://example.com/login" },
         { "action": "type", "selector": "#username", "value": "your-username" },
-        { "action": "click", "selector": "#nextBtn", "waitForSelector": "#password" },
+        {
+          "action": "click",
+          "selector": "#nextBtn",
+          "waitForSelector": "#password"
+        },
         { "action": "type", "selector": "#password", "value": "your-password" },
         { "action": "click", "selector": "#loginbtn" }
       ]
@@ -130,14 +143,21 @@ Each action under `browserAutomation` supports one of two formats:
 
 Supported step `action` values:
 
-| action    | required fields        | optional fields                          |
-| --------- | ---------------------- | ---------------------------------------- |
-| `navigate`| `url`                  | —                                        |
-| `type`    | `selector`, `value`    | —                                        |
-| `click`   | `selector`             | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, default 30000) |
-| `wait`    | `ms`, `selector`, `urlContains`, or `waitForLoading` | `timeout` (when using `selector`, `urlContains`, or `waitForLoading`) |
-| `setWebStorage` | at least one of `localStorage`, `sessionStorage`, or `cookies` | — |
-| `closeBrowser` | — | — |
+| action            | required fields                                                | optional fields                                                                                                            |
+| ----------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `navigate`        | `url`                                                          | —                                                                                                                          |
+| `type`            | `selector`, `value`                                            | `delay`, `waitForLoading`, `timeout`                                                                                       |
+| `click`           | `selector`                                                     | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, default 30000), `jsClick`, `iframe` |
+| `wait`            | `ms`, `selector`, `urlContains`, or `waitForLoading`           | `timeout` (when using `selector`, `urlContains`, or `waitForLoading`)                                                      |
+| `setWebStorage`   | at least one of `localStorage`, `sessionStorage`, or `cookies` | —                                                                                                                          |
+| `closeBrowser`    | —                                                              | —                                                                                                                          |
+| `forEachElement`  | `selector`, `steps`                                            | `textContentSelector`, `excludeTextPatterns`, `clickSelector`, `skipIfPositionMatch`                                       |
+| `apiRequest`      | `url`                                                          | `method`, `params`, `headers`, `auth`, `body`, `timeout`, `ignoreHttpErrors`, `storeAs`                                    |
+| `extractVariable` | `source`, `storeAs`                                            | —                                                                                                                          |
+| `shell`           | `command` or `commands`                                        | `cwd`, `shell`, `timeout`, `ignoreExitCode`, `maxBuffer`, `storeAs`                                                        |
+| `getArguments`    | —                                                              | `required`, `optional`, `defaults`                                                                                         |
+| `invokeAction`    | `name`                                                         | `args`, `continueOnError`, `storeAs`                                                                                       |
+| `tryCatch`        | `try`                                                          | `catch`, `finally`                                                                                                         |
 
 **`setWebStorage`** injects data into the browser's web storage or cookies. This is useful for pre-authenticating sessions that require complex login flows (e.g. OTP codes). Values that are objects or arrays are automatically `JSON.stringify`-ed before being stored. Cookies use Puppeteer's native `page.setCookie()` format.
 
@@ -157,60 +177,100 @@ Example:
 
 **`closeBrowser`** gracefully closes the browser instance. Typically used as the last step in an action.
 
-All selector-based steps wait until the element is **visible** (not only present in the DOM). For multi-step forms, use `waitForSelector` targets that only appear after the previous step (e.g. `#password-input-group:not(.hidden) #password-input-field`).
+**`apiRequest`** calls HTTP endpoints directly. You can persist response data into runtime context with `storeAs`, then reuse it in later steps.
 
-Selectors are standard CSS. For dynamic ids, use attribute selectors instead of a fixed `#id`:
+**`extractVariable`** stores a resolved value into context. Useful to assign short names such as the first task id.
 
-| Pattern | Selector example |
-| ------- | ---------------- |
-| id starts with | `[id^="btn-clocking-event"]` |
-| id contains | `[id*="btn-clocking-event"]` |
-| id ends with | `[id$="-menu"]` |
+**`shell`** executes shell commands (PowerShell by default) and can store command output in context.
 
-After a login redirect, use `waitForNavigation: true` on the login click, then a separate `wait` with `urlContains` (e.g. `"senior-x"`), then `waitForLoading: true` before clicking elements on the new app shell. Senior X shows `s-loading-state` overlays that block clicks even when the button is already in the DOM. The runner waits until loaders are gone and the element is interactable (not covered by an overlay).
+**`getArguments`** validates and maps CLI arguments (passed via `--arg.<name>=<value>`) or parent-action arguments (via `invokeAction`) into the runtime context. Use `required` to list mandatory arguments (throws if missing), `optional` to list arguments that are mapped only when present, and `defaults` to provide fallback values for missing ones.
 
-If an action defines `steps`, that array is used. Otherwise the flat fields are converted automatically to the default four-step flow.
+**`invokeAction`** calls another action defined in `actionRunner` config by name. The child action runs with an isolated context seeded from `args`. Use `storeAs` to copy the child's final context back into the parent. `continueOnError: true` prevents child failures from aborting the parent action. Recursion is capped at 5 levels.
 
-> **_TIP:_** as browserAutomation is an object of objects, you can have `n` login actions for different sites, as long as you add them to the config file properly.
+Example of a composable action:
 
-Now you need to configure the command in your `$PROFILE`, as mentioned in step 1.2 of this README.
-
-So, just add the following code to `$PROFILE`:
-
-```powershell
-New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browser-automation\browser-automation.bat
-
-Function log-email {
-    param (
-        [string[]]$ExtraArgs
-    )
-    $loginCommand = "login"
-    $loginCommand += " --action=log-email"
-    echo $ExtraArgs
-    foreach ($arg in $ExtraArgs) {
-        echo $arg
-        if ($arg.StartsWith("--")) {
-            $loginCommand += " $arg"
-        } elseif ($arg.StartsWith("-")) {
-            $loginCommand += " $arg"
-        } else {
-            $loginCommand += " '$arg'"
+```json
+{
+  "actionRunner": {
+    "perform-api-request": {
+      "steps": [
+        { "action": "getArguments", "required": ["message"] },
+        {
+          "action": "apiRequest",
+          "method": "POST",
+          "url": "https://api.example.com/v1/notify",
+          "params": {
+            "userId": "{{env.GENERIC_USER_ID}}",
+            "message": "{{context.message}}",
+            "apiKey": "{{env.GENERIC_API_KEY}}"
+          },
+          "ignoreHttpErrors": true
         }
+      ]
+    },
+    "my-workflow": {
+      "steps": [
+        { "action": "shell", "command": "echo 'doing work'" },
+        {
+          "action": "invokeAction",
+          "name": "perform-api-request",
+          "args": { "message": "workflow completed" },
+          "continueOnError": true
+        }
+      ]
     }
-    Invoke-Expression $loginCommand
+  }
 }
 ```
 
-What this configuration does is define an alias called login that runs the browser-automation.bat file in this repository, then creates a function that executes the newly created "login" command, passing by default the argument `--action=log-email`. So, the following commands are equivalent:
+**`tryCatch`** wraps steps in try/catch/finally semantics. If any step in `try` throws, the error message is stored in `context.errorMessage` and the `catch` steps run. `finally` steps always run regardless of success or failure. If no `catch` is defined, the error re-throws to the parent flow.
 
-```shell
-login --action=log-email
+Example:
+
+```json
+{
+  "action": "tryCatch",
+  "try": [
+    { "action": "shell", "command": "some-risky-command" },
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "task completed successfully" }
+    }
+  ],
+  "catch": [
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "task failed, error: {{context.errorMessage}}" }
+    }
+  ]
+}
 ```
 
-&
+### Dynamic placeholders
 
-```shell
-log-email
+All string fields in steps support interpolation:
+
+- `{{context.some.path}}` reads values produced by earlier steps.
+- `{{env.VARIABLE_NAME}}` reads environment variables from your machine.
+
+Example:
+
+```json
+{
+  "action": "apiRequest",
+  "url": "{{API_URL}}",
+  "params": {
+    "firstParam": "paramFirst"
+  },
+  "auth": {
+    "type": "basic",
+    "username": "email@example.com",
+    "password": "{{env.PASSKEY}}"
+  },
+  "storeAs": "apiResponse"
+}
 ```
 
 ### 3.2 touch
@@ -243,47 +303,15 @@ Similarly to the previous command and as mentioned in section 1.2 of this README
 New-Alias -Name reinitialize -Value Path\To\Your\Cloned\Repo\reinitialize\reinitialize.bat
 ```
 
-### 3.4 scheduler
+### 3.4 Scheduled Tasks
 
 #### 3.4.1 Specifications
-
-The `scheduler` command opens a browser and shows the list of scheduled jobs of the computer, it allows the CRUD actions for scheduled jobs. The command saves the scheduled jobs in a temporary file and starts a node server to serve the html files and routes, by default the command starts in a separated
-
-It accepts the following parameters:
-
-| Long Parameter | Short Parameter | Required | Description                                                 |
-| -------------- | --------------- | -------- | ----------------------------------------------------------- |
-| \_start\_        |                 | NO       | Starts the server in the same terminal that ran the command |
-| --verbose      | -v              | NO       | Indicates whether to display logs during execution          |
-
-#### 3.4.2 Configuration
-
-Before using the `scheduler` command, you need to configure the server port that should be used (the default is 3002) and to insert the computer user password because this is needed to update scheduled tasks. To do this, you need to create/update the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder, and it is structured like this:
-
-```json
-{
-  "scheduler": {
-    "serverPort": 3002,
-    "userPassword": ""
-  }
-}
-```
-
-Similarly to the previous command and as mentioned in section 1.2 of this README, you need to configure the command in `$PROFILE`. Once the profile is open, the command looks like this:
-
-```powershell
-New-Alias -Name scheduler -Value Path\To\Your\Cloned\Repo\scheduler\scheduler.bat
-```
-
-### 3.5 Scheduled Tasks
-
-#### 3.5.1 Specifications
 
 The `scheduled-tasks/` folder contains an example PowerShell script that creates a Windows Scheduled Task to run any custom command on a recurring schedule. It uses `Register-ScheduledTask` to create a task with configurable weekly triggers. The task loads your `$PROFILE` before executing so that custom functions and aliases are available.
 
 You can find the example at `scheduled-tasks/setup-scheduled-task.example.ps1`.
 
-#### 3.5.2 Configuration
+#### 3.4.2 Configuration
 
 1. Copy the example file and rename it (e.g. `setup-my-task.ps1`).
 2. Open the copy and replace the placeholders:

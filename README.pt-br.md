@@ -6,16 +6,15 @@ O projeto Windows Custom Commands tem por objetivo disponibilizar novos comandos
 
 Antes de tudo, é importante explicar como criar novos comandos no windows. Para fazer isso você precisará adicionar algumas coisas no seu arquivo `$PROFILE`
 
-
 ### 1.1 Acessando o Profile
 
 Para acessar o `$PROFILE` basta abrir o seu PowerShell e rodar o seguinte comando:
 
-``` powershell
+```powershell
 notepad $PROFILE
 ```
 
-> **_DICA:_**  caso prefira, abra o `$PROFILE` em outro app como o VSCode ou o Sublime.
+> **_DICA:_** caso prefira, abra o `$PROFILE` em outro app como o VSCode ou o Sublime.
 
 ### 1.2 Adicionando comandos
 
@@ -33,17 +32,17 @@ New-Alias -Name meu-comando -Value Caminho\Para\Meu\Comando.bat
 
 Agora, o que está acontecendo?
 
-| Ação      | Definição |
-|-----------|-----------|
+| Ação      | Definição                                                                                                                                                                                                       |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New-Alias | Cria aliases que associam comandos a determinados arquivos, [clique aqui para mais informações](https://learn.microsoft.com/pt-br/powershell/module/microsoft.powershell.utility/new-alias?view=powershell-7.4) |
-| -Name | Define o nome do comando que será executado no powershell, no caso do exemplo seria "meu-comando"     |
-| -Value | Define qual arquivo será chamado quando o comando for executado |
+| -Name     | Define o nome do comando que será executado no powershell, no caso do exemplo seria "meu-comando"                                                                                                               |
+| -Value    | Define qual arquivo será chamado quando o comando for executado                                                                                                                                                 |
 
 #### 1.2.2 Criando functions
 
 A outra forma que você pode criar novos comando é adicionando functions ao `$PROFILE`, por exemplo:
 
-``` powershell
+```powershell
 Function meu-comando-custom {
     param (
         [string[]]$ExtraArgs
@@ -77,29 +76,38 @@ npm install
 
 ## 3. Comandos Disponíveis
 
-### 3.1 login
+### 3.1 action-runner
 
 #### 3.1.1 Especificações
 
-O comando `login` abre um browser e faz o login de acordo com as configurações. Ele aceita os seguintes parâmetros:
+O comando `action-runner` executa um fluxo definido em `actionRunner`, que pode combinar automação de browser, requisições de API e comandos de shell. Ele aceita os seguintes parâmetros:
 
-| Parâmetro longo | Parâmetro curto  | Obrigatório | Descrição |
-|---|---|---| --- |
-| --action  | -a  | SIM  | Indica qual ação o login irá realizar    |
-|  --verbose | -v  | NÃO  | Indica se irá mostrar logs durante a execução    |
+| Parâmetro longo      | Parâmetro curto | Obrigatório | Descrição                                              |
+| -------------------- | --------------- | ----------- | ------------------------------------------------------ |
+| --action             | -a              | SIM         | Indica qual ação o action-runner irá realizar          |
+| --verbose            | -v              | NÃO         | Indica se irá mostrar logs durante a execução          |
+| --arg.\<nome\>=valor | —               | NÃO         | Passa um argumento customizado para o contexto da ação |
+
+**Argumentos customizados** permitem passar valores da CLI para qualquer ação. Por exemplo:
+
+```powershell
+action-runner --action=perform-api-request "--arg.message=Olá da CLI"
+```
+
+Dentro da ação, `{{context.message}}` resolve para `"Olá da CLI"` (após um passo `getArguments` mapeá-lo).
 
 #### 3.1.2 Configuração
 
-Antes de usar o comando `login`, é necessário configurar as ações desejadas. Para isso é preciso criar o arquivo `config.json` no diretório `./config/`. Há um exemplo na mesma pasta (`config-example.json`).
+Antes de usar o comando `action-runner`, é necessário configurar as ações desejadas. Para isso é preciso criar o arquivo `config.json` no diretório `./config/`. Há um exemplo na mesma pasta (`config-example.json`).
 
-Cada ação em `browserAutomation` aceita um destes formatos:
+Cada ação em `actionRunner` aceita um destes formatos:
 
 **Login simples (campos planos / legado)** — usuário, senha e enviar:
 
 ```json
 {
-  "browserAutomation": {
-    "logar-email": {
+  "actionRunner": {
+    "simple-login": {
       "url": "https://example.com/login",
       "usernameInput": "#email",
       "usernameValue": "user@example.com",
@@ -115,12 +123,16 @@ Cada ação em `browserAutomation` aceita um destes formatos:
 
 ```json
 {
-  "browserAutomation": {
+  "actionRunner": {
     "login-multi-etapas": {
       "steps": [
         { "action": "navigate", "url": "https://example.com/login" },
         { "action": "type", "selector": "#username", "value": "seu-usuario" },
-        { "action": "click", "selector": "#nextBtn", "waitForSelector": "#password" },
+        {
+          "action": "click",
+          "selector": "#nextBtn",
+          "waitForSelector": "#password"
+        },
         { "action": "type", "selector": "#password", "value": "sua-senha" },
         { "action": "click", "selector": "#loginbtn" }
       ]
@@ -131,14 +143,21 @@ Cada ação em `browserAutomation` aceita um destes formatos:
 
 Valores suportados em `action` de cada passo:
 
-| action     | campos obrigatórios     | campos opcionais                              |
-| ---------- | ----------------------- | --------------------------------------------- |
-| `navigate` | `url`                   | —                                             |
-| `type`     | `selector`, `value`     | —                                             |
-| `click`    | `selector`              | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, padrão 30000) |
-| `wait`     | `ms`, `selector`, `urlContains` ou `waitForLoading` | `timeout` (ao usar `selector`, `urlContains` ou `waitForLoading`) |
-| `setWebStorage` | ao menos um entre `localStorage`, `sessionStorage` ou `cookies` | — |
-| `closeBrowser` | — | — |
+| action            | campos obrigatórios                                             | campos opcionais                                                                                                          |
+| ----------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `navigate`        | `url`                                                           | —                                                                                                                         |
+| `type`            | `selector`, `value`                                             | `delay`, `waitForLoading`, `timeout`                                                                                      |
+| `click`           | `selector`                                                      | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, padrão 30000), `jsClick`, `iframe` |
+| `wait`            | `ms`, `selector`, `urlContains` ou `waitForLoading`             | `timeout` (ao usar `selector`, `urlContains` ou `waitForLoading`)                                                         |
+| `setWebStorage`   | ao menos um entre `localStorage`, `sessionStorage` ou `cookies` | —                                                                                                                         |
+| `closeBrowser`    | —                                                               | —                                                                                                                         |
+| `forEachElement`  | `selector`, `steps`                                             | `textContentSelector`, `excludeTextPatterns`, `clickSelector`, `skipIfPositionMatch`                                      |
+| `apiRequest`      | `url`                                                           | `method`, `params`, `headers`, `auth`, `body`, `timeout`, `ignoreHttpErrors`, `storeAs`                                   |
+| `extractVariable` | `source`, `storeAs`                                             | —                                                                                                                         |
+| `shell`           | `command` ou `commands`                                         | `cwd`, `shell`, `timeout`, `ignoreExitCode`, `maxBuffer`, `storeAs`                                                       |
+| `getArguments`    | —                                                               | `required`, `optional`, `defaults`                                                                                        |
+| `invokeAction`    | `name`                                                          | `args`, `continueOnError`, `storeAs`                                                                                      |
+| `tryCatch`        | `try`                                                           | `catch`, `finally`                                                                                                        |
 
 **`setWebStorage`** injeta dados no web storage ou cookies do navegador. Útil para pré-autenticar sessões que exigem fluxos de login complexos (ex.: códigos OTP). Valores que são objetos ou arrays são automaticamente convertidos com `JSON.stringify` antes de serem armazenados. Cookies usam o formato nativo do `page.setCookie()` do Puppeteer.
 
@@ -149,7 +168,7 @@ Exemplo:
   "action": "setWebStorage",
   "localStorage": {
     "token": "seu-jwt-token",
-    "user": { "id": "123", "name": "joao" }
+    "user": { "id": "123", "name": "john" }
   }
 }
 ```
@@ -158,58 +177,100 @@ Exemplo:
 
 **`closeBrowser`** fecha o navegador de forma controlada. Geralmente usado como último passo de uma ação.
 
-Todos os passos com seletor esperam o elemento ficar **visível** (não só existir no DOM). Em formulários multi-etapas, use `waitForSelector` que só aparece após o passo anterior (ex.: `#password-input-group:not(.hidden) #password-input-field`).
+**`apiRequest`** executa chamadas HTTP e pode salvar o retorno no contexto com `storeAs`.
 
-Os seletores são CSS padrão. Para ids dinâmicos, use seletores por atributo:
+**`extractVariable`** salva um valor resolvido no contexto para reutilização em passos seguintes.
 
-| Padrão | Exemplo |
-| ------ | ------- |
-| id começa com | `[id^="btn-clocking-event"]` |
-| id contém | `[id*="btn-clocking-event"]` |
-| id termina com | `[id$="-menu"]` |
+**`shell`** executa comandos de shell (PowerShell por padrão) e também pode salvar a saída no contexto.
 
-Após redirect de login, use `waitForNavigation: true` no clique de login, depois `wait` com `urlContains` (ex.: `"senior-x"`) e `waitForLoading: true` antes de clicar na nova tela. O Senior X exibe overlays `s-loading-state` que bloqueiam cliques mesmo com o botão no DOM. O runner espera os loaders sumirem e o elemento ficar clicável (sem overlay por cima).
+**`getArguments`** valida e mapeia argumentos da CLI (passados via `--arg.<nome>=<valor>`) ou argumentos de uma ação pai (via `invokeAction`) para o contexto de execução. Use `required` para listar argumentos obrigatórios (lança erro se ausente), `optional` para argumentos mapeados somente quando presentes, e `defaults` para fornecer valores padrão para argumentos ausentes.
 
-Se a ação tiver `steps`, esse array é usado. Caso contrário, os campos planos viram o fluxo padrão de quatro passos automaticamente.
+**`invokeAction`** chama outra ação definida no config `actionRunner` pelo nome. A ação filha executa com um contexto isolado alimentado por `args`. Use `storeAs` para copiar o contexto final da ação filha de volta para o contexto pai. `continueOnError: true` impede que falhas na ação filha abortem a ação pai. A recursão é limitada a 5 níveis.
 
-> **_DICA:_**  como o browserAutomation é um objeto de objetos você pode ter `n` ações de login para diferentes sites, desde que as adicionem no arquivo config devidamente.
+Exemplo de ação composável:
 
-Agora é preciso configurar o comando no seu `$PROFILE`, como já foi mencionado no step 1.2 desde README.
-
-Assim, basta adicionar o seguinte código no `$PROFILE`:
-
-```powershell
-New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browser-automation\browser-automation.bat
-
-Function logar-email {
-    param (
-        [string[]]$ExtraArgs
-    )
-    $loginCommand = "login"
-    $loginCommand += " --action=logar-email"
-    echo $ExtraArgs
-    foreach ($arg in $ExtraArgs) {
-        echo $arg
-        if ($arg.StartsWith("--")) {
-            $loginCommand += " $arg"
-        } elseif ($arg.StartsWith("-")) {
-            $loginCommand += " $arg"
-        } else {
-            $loginCommand += " '$arg'"
+```json
+{
+  "actionRunner": {
+    "perform-api-request": {
+      "steps": [
+        { "action": "getArguments", "required": ["message"] },
+        {
+          "action": "apiRequest",
+          "method": "POST",
+          "url": "https://api.example.com/v1/notify",
+          "params": {
+            "userId": "{{env.GENERIC_USER_ID}}",
+            "message": "{{context.message}}",
+            "apiKey": "{{env.GENERIC_API_KEY}}"
+          },
+          "ignoreHttpErrors": true
         }
+      ]
+    },
+    "meu-fluxo": {
+      "steps": [
+        { "action": "shell", "command": "echo 'trabalhando'" },
+        {
+          "action": "invokeAction",
+          "name": "perform-api-request",
+          "args": { "message": "fluxo concluído" },
+          "continueOnError": true
+        }
+      ]
     }
-    Invoke-Expression $loginCommand
+  }
 }
 ```
 
-O que essa configuração faz é definir um alias chamado login que roda o arquivo browser-automation.bat que está nesse repositório e depois cria uma função que executa o comando "login" recem criado passando por padrão o argumento `--action=logar-email`. Ou seja os seguintes comandos são equivalentes:
+**`tryCatch`** envolve passos em semântica try/catch/finally. Se algum passo em `try` lançar erro, a mensagem é armazenada em `context.errorMessage` e os passos de `catch` são executados. Passos em `finally` sempre executam, independentemente de sucesso ou falha. Se nenhum `catch` for definido, o erro é relançado para o fluxo pai.
 
+Exemplo:
+
+```json
+{
+  "action": "tryCatch",
+  "try": [
+    { "action": "shell", "command": "comando-arriscado" },
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "tarefa concluída com sucesso" }
+    }
+  ],
+  "catch": [
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "tarefa falhou, erro: {{context.errorMessage}}" }
+    }
+  ]
+}
 ```
-login --action=logar-email
-```
-&
-```
-logar-email
+
+### Placeholders dinâmicos
+
+Todos os campos string dos passos aceitam interpolação:
+
+- `{{context.algum.campo}}` para ler valores produzidos por passos anteriores.
+- `{{env.VARIAVEL}}` para ler variáveis de ambiente da máquina.
+
+Exemplo:
+
+```json
+{
+  "action": "apiRequest",
+  "url": "{{API_URL}}",
+  "params": {
+    "firstParam": "paramFirst"
+  },
+  "auth": {
+    "type": "basic",
+    "username": "email@example.com",
+    "password": "{{env.PASSKEY}}"
+  },
+  "storeAs": "apiResponse"
+}
 ```
 
 ### 3.2 touch
@@ -241,51 +302,20 @@ da mesma forma que o comando anterior e conforme mencionado na seção 1.2 deste
 ```powershell
 New-Alias -Name reinitialize -Value Caminho\Para\Seu\Repositorio\Clonado\reinitialize\reinitialize.bat
 ```
+
 Claro, aqui está o markdown traduzido para o português:
 
 ---
 
-### 3.4 scheduler
+### 3.4 Tarefas Agendadas
 
 #### 3.4.1 Especificações
-
-O comando `scheduler` abre um navegador e mostra a lista de tarefas agendadas do computador, permitindo as ações de CRUD para tarefas agendadas. O comando salva as tarefas agendadas em um arquivo temporário e inicia um servidor Node para servir os arquivos HTML e rotas. Por padrão, o comando inicia em um terminal separado.
-
-Ele aceita os seguintes parâmetros:
-
-| Parâmetro Longo | Parâmetro Curto | Obrigatório | Descrição                                                              |
-| ---------------- | ---------------- | ------------ | ---------------------------------------------------------------------- |
-| \_start\_          |                  | NÃO          | Inicia o servidor no mesmo terminal que executou o comando             |
-| --verbose        | -v               | NÃO          | Indica se deve exibir logs durante a execução                           |
-
-#### 3.4.2 Configuração
-
-Antes de usar o comando `scheduler`, você precisa configurar a porta do servidor que deve ser usada (o padrão é 3002) e inserir a senha do usuário do computador, pois isso é necessário para atualizar as tarefas agendadas. Para fazer isso, você precisa criar/atualizar o arquivo `config.json` no diretório `./config/`. Há um exemplo de como essa configuração deve parecer na mesma pasta, e está estruturado da seguinte forma:
-
-```json
-{
-  "scheduler": {
-    "serverPort": 3002,
-    "userPassword": ""
-  }
-}
-```
-
-De forma semelhante ao comando anterior e conforme mencionado na seção 1.2 deste README, você precisa configurar o comando no `$PROFILE`. Uma vez que o perfil esteja aberto, o comando fica assim:
-
-```powershell
-New-Alias -Name scheduler -Value Caminho\Para\Seu\Repositório\Clonado\scheduler\scheduler.bat
-```
-
-### 3.5 Tarefas Agendadas
-
-#### 3.5.1 Especificações
 
 A pasta `scheduled-tasks/` contém um script PowerShell de exemplo que cria uma Tarefa Agendada do Windows para executar qualquer comando customizado em um cronograma recorrente. Ele utiliza `Register-ScheduledTask` para criar uma tarefa com gatilhos semanais configuráveis. A tarefa carrega seu `$PROFILE` antes de executar para que funções e aliases customizados estejam disponíveis.
 
 Você pode encontrar o exemplo em `scheduled-tasks/setup-scheduled-task.example.ps1`.
 
-#### 3.5.2 Configuração
+#### 3.4.2 Configuração
 
 1. Copie o arquivo de exemplo e renomeie-o (ex.: `setup-minha-tarefa.ps1`).
 2. Abra a cópia e substitua os placeholders:

@@ -1,6 +1,6 @@
 {
-  "browserAutomation": {
-    "log-email": {
+  "actionRunner": {
+    "simple-login": {
       "url": "https://example.com/login",
       "usernameInput": "#email",
       "usernameValue": "user@example.com",
@@ -35,55 +35,55 @@
         }
       ]
     },
-    "lancar-horas-clockify": {
+    "complex-web-automation": {
       "steps": [
         {
           "action": "navigate",
-          "url": "https://app.clockify.me/login"
+          "url": "https://app.example.com/login"
         },
         {
           "action": "setWebStorage",
           "localStorage": {
-            "token": "your-clockify-token",
-            "userId": "your-user-id"
+            "authToken": "your-auth-token",
+            "accountId": "your-account-id"
           }
         },
         {
           "action": "navigate",
-          "url": "https://app.clockify.me/calendar"
+          "url": "https://app.example.com/dashboard"
         },
         {
           "action": "wait",
-          "selector": "weekly-view",
+          "selector": ".data-grid",
           "timeout": 10000
         },
         {
           "action": "forEachElement",
-          "selector": ".cl-calendar-entry.cl-calendar-entry-integration.cl-p-0",
-          "textContentSelector": ".cl-h-100.z-index-on-top",
-          "excludeTextPatterns": ["OOO", "Almoço"],
-          "clickSelector": ".cl-calendar-integrations-icons",
+          "selector": ".data-row",
+          "textContentSelector": ".row-title",
+          "excludeTextPatterns": ["Ignore", "Archived"],
+          "clickSelector": ".row-actions",
           "skipIfPositionMatch": {
             "scopeSelector": ".drop-zone",
-            "matchSelector": ".cl-calendar-entry:not(.cl-calendar-entry-integration)"
+            "matchSelector": ".data-row.processed"
           },
           "steps": [
             {
               "action": "wait",
-              "selector": "ngb-modal-window",
+              "selector": ".modal-dialog",
               "timeout": 5000
             },
             {
               "action": "click",
-              "selector": "button[data-cy='project']"
+              "selector": "button[data-role='category']"
             },
             {
               "action": "wait",
-              "selector": "project-picker"
+              "selector": ".category-picker"
             },
             {
               "action": "click",
-              "selector": "button.cl-btn-project-picker[title='Office Depot - VTEX Migration']"
+              "selector": "button.option-item[title='Project A']"
             },
             {
               "action": "wait",
@@ -91,12 +91,300 @@
             },
             {
               "action": "click",
-              "selector": "button.cl-btn-primary",
+              "selector": "button.btn-primary",
               "jsClick": true
             },
             {
               "action": "wait",
               "ms": 1000
+            }
+          ]
+        }
+      ]
+    },
+    "perform-api-request": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "required": ["message"]
+        },
+        {
+          "action": "apiRequest",
+          "method": "POST",
+          "url": "https://api.example.com/v1/notify",
+          "params": {
+            "userId": "{{env.GENERIC_USER_ID}}",
+            "message": "{{context.message}}",
+            "apiKey": "{{env.GENERIC_API_KEY}}"
+          },
+          "ignoreHttpErrors": true,
+          "storeAs": "apiResponse"
+        }
+      ]
+    },
+    "fetch-and-save-api-data": {
+      "steps": [
+        {
+          "action": "apiRequest",
+          "method": "GET",
+          "url": "https://api.example.com/v1/tasks",
+          "params": {
+            "status": "in-progress",
+            "limit": 1,
+            "fields": "id,status,title"
+          },
+          "auth": {
+            "type": "basic",
+            "username": "your-email@example.com",
+            "password": "{{env.API_PASSWORD}}"
+          },
+          "storeAs": "tasksResponse"
+        },
+        {
+          "action": "extractVariable",
+          "source": "{{context.tasksResponse.data.0.id}}",
+          "storeAs": "taskId"
+        },
+        {
+          "action": "apiRequest",
+          "method": "GET",
+          "url": "https://api.example.com/v1/tasks/{{context.taskId}}",
+          "params": {
+            "fields": "title,description,status,priority,labels,owner,comments"
+          },
+          "auth": {
+            "type": "basic",
+            "username": "your-email@example.com",
+            "password": "{{env.API_PASSWORD}}"
+          },
+          "storeAs": "taskDetails"
+        },
+        {
+          "action": "writeFile",
+          "path": "{{env.TASK_DETAILS_FOLDER}}\\task-{{context.taskId}}.json",
+          "content": "{{context.taskDetails}}",
+          "backupIfExists": true,
+          "storeAs": "taskDetailsFilePath"
+        }
+      ]
+    },
+    "validate-local-environment": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "required": ["taskId"]
+        },
+        {
+          "action": "shell",
+          "shellArgs": ["-NoProfile"],
+          "cwd": "C:\\path\\to\\your\\workspace",
+          "commands": [
+            "$ErrorActionPreference = 'Stop'",
+            "$taskId = '{{context.taskId}}'",
+            "Write-Host ('[validate-local-environment] Validating repositories for task: ' + $taskId)",
+            "if ([string]::IsNullOrWhiteSpace($taskId)) { throw 'No task id was provided for environment validation.' }",
+            "$basePath = 'C:\\path\\to\\your\\workspace'",
+            "$repositories = @(@{ Name = 'repo-1'; ExpectedBranch = 'develop' }, @{ Name = 'repo-2'; ExpectedBranch = 'main' })",
+            "foreach ($repository in $repositories) {",
+            "$repositoryPath = Join-Path $basePath $repository.Name",
+            "if (-not (Test-Path $repositoryPath)) { throw ('Repository path not found: ' + $repositoryPath) }",
+            "Push-Location $repositoryPath",
+            "try {",
+            "$currentBranch = (git rev-parse --abbrev-ref HEAD).Trim()",
+            "$gitStatusOutput = (git status --porcelain | Out-String).Trim()",
+            "$hasUncommittedChanges = -not [string]::IsNullOrWhiteSpace($gitStatusOutput)",
+            "if ($currentBranch -ne $repository.ExpectedBranch -and $hasUncommittedChanges) { throw ('Repository ' + $repository.Name + ' is on branch ' + $currentBranch + ' with uncommitted changes. Aborting.') }",
+            "if ($currentBranch -ne $repository.ExpectedBranch -and -not $hasUncommittedChanges) { git checkout $repository.ExpectedBranch }",
+            "if ($hasUncommittedChanges) { throw ('Repository ' + $repository.Name + ' has uncommitted changes. Aborting.') }",
+            "$targetBranch = ('feat/' + $taskId.ToLower())",
+            "$featureBranchExists = (git branch --list $targetBranch | Out-String).Trim()",
+            "if ([string]::IsNullOrWhiteSpace($featureBranchExists)) { git checkout -b $targetBranch } else { git checkout $targetBranch }",
+            "} finally {",
+            "Pop-Location",
+            "}",
+            "}",
+            "Write-Host '[validate-local-environment] Environment validation completed successfully'"
+          ]
+        }
+      ]
+    },
+    "run-agent-workflow": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "required": ["taskId"]
+        },
+        {
+          "action": "extractVariable",
+          "source": "{{env.TASK_DETAILS_FOLDER}}\\task-{{context.taskId}}.json",
+          "storeAs": "taskDetailsFilePath"
+        },
+        {
+          "action": "shell",
+          "shellArgs": ["-NoProfile"],
+          "cwd": "C:\\path\\to\\your\\project",
+          "commands": [
+            "$ErrorActionPreference = 'Stop'",
+            "$taskId = '{{context.taskId}}'",
+            "$taskDetailsFilePath = '{{context.taskDetailsFilePath}}'",
+            "if (-not (Test-Path $taskDetailsFilePath)) { throw ('Task details file not found: ' + $taskDetailsFilePath) }",
+            "$tempFile = Join-Path $env:TEMP ('task-' + $taskId + '-' + [guid]::NewGuid().ToString() + '.json')",
+            "Copy-Item -Path $taskDetailsFilePath -Destination $tempFile -Force",
+            "agent --print --mode plan ('Create an implementation plan for task ' + $taskId + '. Read the full task data (JSON format) from: ' + $tempFile)",
+            "if ($LASTEXITCODE -ne 0) { throw 'Failed to generate plan in agent.' }",
+            "agent --print --continue \"/odp execute the plan, don't ask me questions at this moment, always consider your recommendation and save the questions you would ask and show me at the end of the whole process so I can review them later\"",
+            "if ($LASTEXITCODE -ne 0) { throw 'Failed to execute plan in agent.' }",
+            "Remove-Item $tempFile -ErrorAction SilentlyContinue"
+          ],
+          "storeAs": "agentOutput"
+        }
+      ]
+    },
+    "generate-markdown-report": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "required": ["taskId"]
+        },
+        {
+          "action": "shell",
+          "shellArgs": ["-NoProfile"],
+          "cwd": "C:\\path\\to\\your\\project",
+          "timeout": 900000,
+          "commands": [
+            "$ErrorActionPreference = 'Stop'",
+            "$taskId = '{{context.taskId}}'",
+            "$taskDetailsFilePath = Join-Path '{{env.TASK_DETAILS_FOLDER}}' ('task-' + $taskId + '.json')",
+            "if (-not (Test-Path $taskDetailsFilePath)) { throw ('Task details file not found: ' + $taskDetailsFilePath) }",
+            "$planPrompt = 'Create an implementation plan for task ' + $taskId + '. Read the full task data (JSON format) from file path: ' + $taskDetailsFilePath + '. Return a detailed markdown plan.'",
+            "$rawPlanOutput = agent --print --mode plan $planPrompt 2>&1 | Out-String",
+            "if ($LASTEXITCODE -ne 0) { throw 'Failed to generate plan in agent.' }",
+            "$normalizedPlanOutput = $rawPlanOutput -replace \"`r\", ''",
+            "$planLines = $normalizedPlanOutput -split \"`n\"",
+            "$firstHeadingIndex = -1",
+            "for ($lineIndex = 0; $lineIndex -lt $planLines.Count; $lineIndex++) {",
+            "if ($planLines[$lineIndex] -match '^\\s*#\\s+') { $firstHeadingIndex = $lineIndex; break }",
+            "}",
+            "if ($firstHeadingIndex -ge 0) {",
+            "$cleanPlan = ($planLines[$firstHeadingIndex..($planLines.Count - 1)] -join \"`n\").Trim()",
+            "} else {",
+            "$cleanPlan = $normalizedPlanOutput.Trim()",
+            "}",
+            "if ([string]::IsNullOrWhiteSpace($cleanPlan)) { throw 'Failed to extract markdown plan from agent output.' }",
+            "Write-Output $cleanPlan"
+          ],
+          "storeAs": "planOutput"
+        },
+        {
+          "action": "writeFile",
+          "path": "{{env.TASK_PLANS_FOLDER}}\\task-{{context.taskId}}.md",
+          "content": "{{context.planOutput.stdout}}",
+          "backupIfExists": true,
+          "storeAs": "taskPlanFilePath"
+        }
+      ]
+    },
+    "execute-markdown-plan": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "required": ["taskId"]
+        },
+        {
+          "action": "shell",
+          "shellArgs": ["-NoProfile"],
+          "cwd": "C:\\path\\to\\your\\project",
+          "timeout": 900000,
+          "commands": [
+            "$ErrorActionPreference = 'Stop'",
+            "$taskId = '{{context.taskId}}'",
+            "$taskPlanFilePath = Join-Path '{{env.TASK_PLANS_FOLDER}}' ('task-' + $taskId + '.md')",
+            "if (-not (Test-Path $taskPlanFilePath)) { throw ('Task plan file not found: ' + $taskPlanFilePath) }",
+            "$executePrompt = '/odp execute the implementation plan from file path ' + $taskPlanFilePath + '. Do not ask me questions right now. Always consider your recommendations and list the skipped questions/decisions in your final response.'",
+            "$executionOutput = agent --print --continue $executePrompt | Out-String",
+            "if ($LASTEXITCODE -ne 0) { throw 'Failed to execute plan in agent.' }",
+            "$normalizedOutput = $executionOutput -replace \"`r\", ''",
+            "$assistantMarkers = [regex]::Matches($normalizedOutput, '(?m)^Assistant:\\s*$')",
+            "if ($assistantMarkers.Count -gt 0) {",
+            "$lastAssistantMarker = $assistantMarkers[$assistantMarkers.Count - 1]",
+            "$contentStart = $lastAssistantMarker.Index + $lastAssistantMarker.Length",
+            "$lastResponse = $normalizedOutput.Substring($contentStart).Trim()",
+            "} else {",
+            "$segments = $normalizedOutput -split '(?m)^---+$'",
+            "$nonEmptySegments = @($segments | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })",
+            "if ($nonEmptySegments.Count -gt 0) {",
+            "$lastResponse = $nonEmptySegments[$nonEmptySegments.Count - 1].Trim()",
+            "} else {",
+            "$lastResponse = $normalizedOutput.Trim()",
+            "}",
+            "}",
+            "if ([string]::IsNullOrWhiteSpace($lastResponse)) { $lastResponse = 'No assistant response captured.' }",
+            "Write-Output $lastResponse"
+          ],
+          "storeAs": "agentLastResponse"
+        },
+        {
+          "action": "writeFile",
+          "path": "{{env.TASK_EXECUTION_SUMMARY_FOLDER}}\\task-{{context.taskId}}.md",
+          "content": "{{context.agentLastResponse.stdout}}",
+          "backupIfExists": true,
+          "storeAs": "taskExecutionSummaryPath"
+        }
+      ]
+    },
+    "action-with-try-catch": {
+      "steps": [
+        {
+          "action": "getArguments",
+          "defaults": {
+            "taskId": "unknown-task",
+            "failedStage": "unknown-stage"
+          }
+        },
+        {
+          "action": "tryCatch",
+          "try": [
+            {
+              "action": "invokeAction",
+              "name": "fetch-and-save-api-data",
+              "storeAs": "taskResult"
+            },
+            {
+              "action": "extractVariable",
+              "source": "{{context.taskResult.taskId}}",
+              "storeAs": "taskId"
+            },
+            {
+              "action": "invokeAction",
+              "name": "validate-local-environment",
+              "args": {
+                "taskId": "{{context.taskId}}"
+              }
+            },
+            {
+              "action": "invokeAction",
+              "name": "run-agent-workflow",
+              "args": {
+                "taskId": "{{context.taskId}}"
+              }
+            },
+            {
+              "action": "invokeAction",
+              "name": "perform-api-request",
+              "args": {
+                "message": "task {{context.taskId}} completed successfully"
+              },
+              "continueOnError": true
+            }
+          ],
+          "catch": [
+            {
+              "action": "invokeAction",
+              "name": "perform-api-request",
+              "args": {
+                "message": "task {{context.taskId}} failed at stage {{context.failedStage}}"
+              },
+              "continueOnError": true
             }
           ]
         }
