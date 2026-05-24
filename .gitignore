@@ -131,3 +131,7 @@ dist
 
 # ignoring configs
 config/config.json
+
+# Scheduled tasks - ignore everything except the example file
+scheduled-tasks/*
+!scheduled-tasks/setup-scheduled-task.example.ps1

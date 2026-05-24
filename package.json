@@ -4,6 +4,9 @@
   "description": "custom windows powershell commands",
   "license": "ISC",
   "author": "João Luiz de Castro",
+  "scripts": {
+    "test": "node --test action-runner/tests"
+  },
   "dependencies": {
     "puppeteer": "^22.9.0",
     "uuid": "^9.0.1"

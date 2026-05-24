@@ -76,78 +76,201 @@ npm install
 
 ## 3. Available Commands
 
-### 3.1 login
+### 3.1 action-runner
 
 #### 3.1.1 Specifications
 
-The `login` command opens a browser and logs in according to the settings. It accepts the following parameters:
+The `action-runner` command executes one action flow from `actionRunner`, which can include browser automation, API requests, and shell commands. It accepts the following parameters:
 
-| Long Parameter | Short Parameter | Required | Description                                        |
-| -------------- | --------------- | -------- | -------------------------------------------------- |
-| --action       | -a              | YES      | Indicates the action the login will perform        |
-| --verbose      | -v              | NO       | Indicates whether to display logs during execution |
+| Long Parameter       | Short Parameter | Required | Description                                         |
+| -------------------- | --------------- | -------- | --------------------------------------------------- |
+| --action             | -a              | YES      | Indicates the action the action-runner will perform |
+| --verbose            | -v              | NO       | Indicates whether to display logs during execution  |
+| --arg.\<name\>=value | —               | NO       | Passes a custom argument into the action's context  |
+
+**Custom arguments** let you pass values from the CLI into any action. For example:
+
+```powershell
+action-runner --action=perform-api-request "--arg.message=Hello from CLI"
+```
+
+Inside the action, `{{context.message}}` resolves to `"Hello from CLI"` (after a `getArguments` step maps it).
 
 #### 3.1.2 Configuration
 
-Before using the `login` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder, and it is structured like this:
+Before using the `action-runner` command, you need to configure the desired actions. To do this, you need to create the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder (`config-example.json`).
+
+Each action under `actionRunner` supports one of two formats:
+
+**Simple login (legacy flat fields)** — username, password, then submit:
 
 ```json
 {
-  "browseAndLogin": {
-    "[actions]": {
-      "url": "",
-      "usernameInput": "",
-      "usernameValue": "",
-      "passwordInput": "",
-      "passwordValue": "",
-      "loginButton": ""
+  "actionRunner": {
+    "simple-login": {
+      "url": "https://example.com/login",
+      "usernameInput": "#email",
+      "usernameValue": "user@example.com",
+      "passwordInput": "#password",
+      "passwordValue": "your-password",
+      "loginButton": "#submit"
     }
   }
 }
 ```
 
-Let's say you want to create a command that logs into your email. To do this, just replace "[action]" with "log-email" and fill in the other fields according to the access form IDs and your data.
+**Multi-step login (`steps` array)** — use when you need extra clicks, waits, or a custom order (e.g. click "Next" after username):
 
-> **_TIP:_** as browseAndLogin is an object of objects, you can have `n` login actions for different sites, as long as you add them to the config file properly.
-
-Now you need to configure the command in your `$PROFILE`, as mentioned in step 1.2 of this README.
-
-So, just add the following code to `$PROFILE`:
-
-```powershell
-New-Alias -Name login -Value Path\To\Your\Cloned\Repo\browse-and-login\browse-and-login.bat
-
-Function log-email {
-    param (
-        [string[]]$ExtraArgs
-    )
-    $loginCommand = "login"
-    $loginCommand += " --action=log-email"
-    echo $ExtraArgs
-    foreach ($arg in $ExtraArgs) {
-        echo $arg
-        if ($arg.StartsWith("--")) {
-            $loginCommand += " $arg"
-        } elseif ($arg.StartsWith("-")) {
-            $loginCommand += " $arg"
-        } else {
-            $loginCommand += " '$arg'"
-        }
+```json
+{
+  "actionRunner": {
+    "multi-step-login": {
+      "steps": [
+        { "action": "navigate", "url": "https://example.com/login" },
+        { "action": "type", "selector": "#username", "value": "your-username" },
+        {
+          "action": "click",
+          "selector": "#nextBtn",
+          "waitForSelector": "#password"
+        },
+        { "action": "type", "selector": "#password", "value": "your-password" },
+        { "action": "click", "selector": "#loginbtn" }
+      ]
     }
-    Invoke-Expression $loginCommand
+  }
 }
 ```
 
-What this configuration does is define an alias called login that runs the browse-and-login.bat file in this repository, then creates a function that executes the newly created "login" command, passing by default the argument `--action=log-email`. So, the following commands are equivalent:
+Supported step `action` values:
 
-```shell
-login --action=log-email
+| action            | required fields                                                | optional fields                                                                                                            |
+| ----------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `navigate`        | `url`                                                          | —                                                                                                                          |
+| `type`            | `selector`, `value`                                            | `delay`, `waitForLoading`, `timeout`                                                                                       |
+| `click`           | `selector`                                                     | `waitForNavigation`, `waitForUrl`, `waitForSelector`, `waitForLoading`, `timeout` (ms, default 30000), `jsClick`, `iframe` |
+| `wait`            | `ms`, `selector`, `urlContains`, or `waitForLoading`           | `timeout` (when using `selector`, `urlContains`, or `waitForLoading`)                                                      |
+| `setWebStorage`   | at least one of `localStorage`, `sessionStorage`, or `cookies` | —                                                                                                                          |
+| `closeBrowser`    | —                                                              | —                                                                                                                          |
+| `forEachElement`  | `selector`, `steps`                                            | `textContentSelector`, `excludeTextPatterns`, `clickSelector`, `skipIfPositionMatch`                                       |
+| `apiRequest`      | `url`                                                          | `method`, `params`, `headers`, `auth`, `body`, `timeout`, `ignoreHttpErrors`, `storeAs`                                    |
+| `extractVariable` | `source`, `storeAs`                                            | —                                                                                                                          |
+| `shell`           | `command` or `commands`                                        | `cwd`, `shell`, `timeout`, `ignoreExitCode`, `maxBuffer`, `storeAs`                                                        |
+| `getArguments`    | —                                                              | `required`, `optional`, `defaults`                                                                                         |
+| `invokeAction`    | `name`                                                         | `args`, `continueOnError`, `storeAs`                                                                                       |
+| `tryCatch`        | `try`                                                          | `catch`, `finally`                                                                                                         |
+
+**`setWebStorage`** injects data into the browser's web storage or cookies. This is useful for pre-authenticating sessions that require complex login flows (e.g. OTP codes). Values that are objects or arrays are automatically `JSON.stringify`-ed before being stored. Cookies use Puppeteer's native `page.setCookie()` format.
+
+Example:
+
+```json
+{
+  "action": "setWebStorage",
+  "localStorage": {
+    "token": "your-jwt-token",
+    "user": { "id": "123", "name": "john" }
+  }
+}
 ```
 
-&
+> **_NOTE:_** `setWebStorage` must be used **after** a `navigate` step to the target domain, since localStorage/sessionStorage is bound to the page origin. To apply the injected session, add another `navigate` step after `setWebStorage` to reload the page.
 
-```shell
-log-email
+**`closeBrowser`** gracefully closes the browser instance. Typically used as the last step in an action.
+
+**`apiRequest`** calls HTTP endpoints directly. You can persist response data into runtime context with `storeAs`, then reuse it in later steps.
+
+**`extractVariable`** stores a resolved value into context. Useful to assign short names such as the first task id.
+
+**`shell`** executes shell commands (PowerShell by default) and can store command output in context.
+
+**`getArguments`** validates and maps CLI arguments (passed via `--arg.<name>=<value>`) or parent-action arguments (via `invokeAction`) into the runtime context. Use `required` to list mandatory arguments (throws if missing), `optional` to list arguments that are mapped only when present, and `defaults` to provide fallback values for missing ones.
+
+**`invokeAction`** calls another action defined in `actionRunner` config by name. The child action runs with an isolated context seeded from `args`. Use `storeAs` to copy the child's final context back into the parent. `continueOnError: true` prevents child failures from aborting the parent action. Recursion is capped at 5 levels.
+
+Example of a composable action:
+
+```json
+{
+  "actionRunner": {
+    "perform-api-request": {
+      "steps": [
+        { "action": "getArguments", "required": ["message"] },
+        {
+          "action": "apiRequest",
+          "method": "POST",
+          "url": "https://api.example.com/v1/notify",
+          "params": {
+            "userId": "{{env.GENERIC_USER_ID}}",
+            "message": "{{context.message}}",
+            "apiKey": "{{env.GENERIC_API_KEY}}"
+          },
+          "ignoreHttpErrors": true
+        }
+      ]
+    },
+    "my-workflow": {
+      "steps": [
+        { "action": "shell", "command": "echo 'doing work'" },
+        {
+          "action": "invokeAction",
+          "name": "perform-api-request",
+          "args": { "message": "workflow completed" },
+          "continueOnError": true
+        }
+      ]
+    }
+  }
+}
+```
+
+**`tryCatch`** wraps steps in try/catch/finally semantics. If any step in `try` throws, the error message is stored in `context.errorMessage` and the `catch` steps run. `finally` steps always run regardless of success or failure. If no `catch` is defined, the error re-throws to the parent flow.
+
+Example:
+
+```json
+{
+  "action": "tryCatch",
+  "try": [
+    { "action": "shell", "command": "some-risky-command" },
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "task completed successfully" }
+    }
+  ],
+  "catch": [
+    {
+      "action": "invokeAction",
+      "name": "perform-api-request",
+      "args": { "message": "task failed, error: {{context.errorMessage}}" }
+    }
+  ]
+}
+```
+
+### Dynamic placeholders
+
+All string fields in steps support interpolation:
+
+- `{{context.some.path}}` reads values produced by earlier steps.
+- `{{env.VARIABLE_NAME}}` reads environment variables from your machine.
+
+Example:
+
+```json
+{
+  "action": "apiRequest",
+  "url": "{{API_URL}}",
+  "params": {
+    "firstParam": "paramFirst"
+  },
+  "auth": {
+    "type": "basic",
+    "username": "email@example.com",
+    "password": "{{env.PASSKEY}}"
+  },
+  "storeAs": "apiResponse"
+}
 ```
 
 ### 3.2 touch
@@ -180,37 +303,42 @@ Similarly to the previous command and as mentioned in section 1.2 of this README
 New-Alias -Name reinitialize -Value Path\To\Your\Cloned\Repo\reinitialize\reinitialize.bat
 ```
 
-### 3.4 scheduler
+### 3.4 Scheduled Tasks
 
 #### 3.4.1 Specifications
 
-The `scheduler` command opens a browser and shows the list of scheduled jobs of the computer, it allows the CRUD actions for scheduled jobs. The command saves the scheduled jobs in a temporary file and starts a node server to serve the html files and routes, by default the command starts in a separated
+The `scheduled-tasks/` folder contains an example PowerShell script that creates a Windows Scheduled Task to run any custom command on a recurring schedule. It uses `Register-ScheduledTask` to create a task with configurable weekly triggers. The task loads your `$PROFILE` before executing so that custom functions and aliases are available.
 
-It accepts the following parameters:
-
-| Long Parameter | Short Parameter | Required | Description                                                 |
-| -------------- | --------------- | -------- | ----------------------------------------------------------- |
-| \_start\_        |                 | NO       | Starts the server in the same terminal that ran the command |
-| --verbose      | -v              | NO       | Indicates whether to display logs during execution          |
+You can find the example at `scheduled-tasks/setup-scheduled-task.example.ps1`.
 
 #### 3.4.2 Configuration
 
-Before using the `scheduler` command, you need to configure the server port that should be used (the default is 3002) and to insert the computer user password because this is needed to update scheduled tasks. To do this, you need to create/update the `config.json` file in the `./config/` directory. There is an example of how this config should look in the same folder, and it is structured like this:
+1. Copy the example file and rename it (e.g. `setup-my-task.ps1`).
+2. Open the copy and replace the placeholders:
+   - `$TaskName` — set a unique name for your scheduled task.
+   - `$triggerTimes` — set the times you want it to trigger (24h format).
+   - `$weekdays` — set the days of the week.
+   - `{{YOUR_COMMAND_HERE}}` — replace with the command or function you want to run (e.g. a function defined in your `$PROFILE`).
 
-```json
-{
-  "scheduler": {
-    "serverPort": 3002,
-    "userPassword": ""
-  }
-}
-```
-
-Similarly to the previous command and as mentioned in section 1.2 of this README, you need to configure the command in `$PROFILE`. Once the profile is open, the command looks like this:
+3. Run the script once from an **elevated** (Administrator) PowerShell terminal:
 
 ```powershell
-New-Alias -Name scheduler -Value Path\To\Your\Cloned\Repo\scheduler\scheduler.bat
+.\scheduled-tasks\setup-my-task.ps1
 ```
+
+To remove a scheduled task:
+
+```powershell
+.\scheduled-tasks\setup-my-task.ps1 -Remove
+```
+
+You can verify the task was created with:
+
+```powershell
+Get-ScheduledTask -TaskName "YourTaskName" | Get-ScheduledTaskInfo
+```
+
+> **_NOTE:_** make sure the command you reference is already defined in your `$PROFILE` before running the setup script, since the scheduled task depends on it.
 
 # Other versions
 
