@@ -1,0 +1,157 @@
+.canvas-and-details {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 12px;
+  min-height: 580px;
+}
+
+.flow-canvas {
+  border: 2px solid #cad5df;
+  border-radius: 6px;
+  background: #ebeff3;
+}
+
+.react-flow__node-stepNode,
+.react-flow__node-insertNode {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.custom-flow-step-node {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #9cb4c9;
+  border-radius: 20px;
+  background: #f9fbfd;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.custom-flow-step-title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1f2d3d;
+}
+
+.custom-flow-step-summary {
+  font-size: 10px;
+  line-height: 1.2;
+  color: #4a5a6f;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.custom-flow-insert-node {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 2px solid #20b8ad;
+  background: #f2fbfa;
+  display: grid;
+  place-items: center;
+  color: #149086;
+}
+
+.custom-flow-insert-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.details-panel {
+  border: 2px solid #cad5df;
+  border-radius: 6px;
+  background: #f9fafb;
+  padding: 10px;
+  max-height: 580px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.details-panel-title {
+  margin: 0 0 10px;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.details-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.details-panel-header .status-text {
+  margin: 0;
+}
+
+.step-details-section {
+  margin-top: 12px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-details-title {
+  flex-shrink: 0;
+}
+
+.step-details-empty {
+  margin: 0;
+}
+
+.step-fields-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.step-details-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #cad5df;
+  flex-shrink: 0;
+}
+
+.warning-box {
+  margin-top: 12px;
+  border: 1px solid #cd9f3d;
+  background: #fff4df;
+  border-radius: 6px;
+  padding: 8px;
+  color: #664d1f;
+}
+
+.error-banner {
+  border: 1px solid #d24f67;
+  background: #fbe7eb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 10px;
+  color: #9c1d31;
+  white-space: pre-wrap;
+}
+
+.info-banner {
+  border: 1px solid #7aa7d4;
+  background: #e7f0fa;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 8px 22px 0;
+  color: #265a8b;
+}

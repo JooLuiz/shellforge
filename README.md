@@ -340,6 +340,23 @@ Get-ScheduledTask -TaskName "YourTaskName" | Get-ScheduledTaskInfo
 
 > **_NOTE:_** make sure the command you reference is already defined in your `$PROFILE` before running the setup script, since the scheduled task depends on it.
 
+## 4. Desktop UI
+
+The repository now includes a desktop manager under `ui/` to configure:
+
+- pre-defined commands and aliases (`reinitialize`, `touch`, `action-runner`)
+- custom actions from `config/config.json` (with `availableOnCLI` toggles and aliases)
+- scheduled task script files in `scheduled-tasks/`
+
+Desktop UI behavior highlights:
+
+- edit modals auto-save after 10 seconds without field changes and also support manual save
+- create modals save only on `Save`
+- edit modal save button states are `Save`, `Saving...`, and `Saved`
+- scheduled task row toggles execute the related `.ps1` script (`-Remove` is used when toggling off)
+
+For setup and development commands, see [`ui/README.md`](ui/README.md).
+
 # Other versions
 
 [Readme in Portuguese (PT-BR)](README.pt-br.md)

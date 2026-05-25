@@ -1,0 +1,30 @@
+{
+  "name": "windows-custom-commands-ui",
+  "version": "0.1.0",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dagre": "^0.8.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4",
+    "windows-custom-commands": "file:.."
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.5.0",
+    "electron": "^31.7.7",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vitest": "^2.1.9"
+  }
+}

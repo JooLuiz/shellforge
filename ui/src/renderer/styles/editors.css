@@ -1,0 +1,35 @@
+.list-editor,
+.object-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-editor-row,
+.object-editor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.object-editor-row {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) auto;
+}
+
+.json-field-error {
+  color: #9c1d31;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.label-caption {
+  color: #5e7085;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.status-text {
+  font-size: 20px;
+  color: #5c6f84;
+}

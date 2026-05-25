@@ -1,0 +1,32 @@
+.weekdays-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: start;
+  gap: 8px;
+}
+
+.weekdays-grid .inline-field {
+  justify-content: flex-start;
+}
+
+.weekdays-grid .inline-field input {
+  width: auto;
+}
+
+.scheduled-modal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.scheduled-modal-left,
+.scheduled-modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduled-modal-right {
+  border-left: 2px dashed #adc2d8;
+  padding-left: 16px;
+}

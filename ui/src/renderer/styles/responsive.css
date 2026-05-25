@@ -1,0 +1,62 @@
+@media (max-width: 1400px) {
+  .window-header h1 {
+    font-size: 36px;
+  }
+
+  .tab-button {
+    font-size: 22px;
+  }
+
+  .tab-header h2 {
+    font-size: 36px;
+  }
+
+  .tab-header p,
+  .field-block,
+  .field-block input,
+  .field-block select,
+  .field-block textarea,
+  .button,
+  .button-ghost,
+  .app-footer,
+  .list-row-subtitle,
+  .status-text,
+  .label-caption {
+    font-size: 16px;
+  }
+
+  .list-row-title {
+    font-size: 30px;
+  }
+
+  .modal-header h3 {
+    font-size: 32px;
+  }
+
+  .row-right {
+    min-width: 240px;
+  }
+
+  .custom-row-right {
+    min-width: 260px;
+  }
+
+  .scheduled-task-row-main {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, auto);
+  }
+
+  .row-right-top,
+  .row-right-bottom {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .custom-row-right-top,
+  .custom-row-right-bottom {
+    justify-content: flex-end;
+  }
+
+  .object-editor-row {
+    grid-template-columns: 1fr;
+  }
+}

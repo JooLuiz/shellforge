@@ -1,0 +1,164 @@
+.button {
+  border: 0;
+  border-radius: 4px;
+  color: #fff;
+  padding: 8px 14px;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.button-blue {
+  background: #5ba5df;
+}
+
+.button-red {
+  background: #d95067;
+}
+
+.button-green {
+  background: #5ab24a;
+}
+
+.button-teal {
+  background: #20b8ad;
+}
+
+.button-ghost {
+  border: 1px solid #a5b4c3;
+  border-radius: 4px;
+  color: #4c5e74;
+  background: #edf1f6;
+  padding: 8px 14px;
+  font-size: 22px;
+}
+
+.toggle {
+  position: relative;
+  width: 52px;
+  height: 30px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  background: #97a8b9;
+  transition: 0.2s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #f5f7fa;
+  transition: 0.2s ease;
+}
+
+.toggle input:checked + .slider {
+  background: #24b6ab;
+}
+
+.toggle input:checked + .slider::before {
+  transform: translateX(22px);
+}
+
+.app-footer {
+  border-top: 1px solid #b7c2ce;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #4e6077;
+  font-size: 24px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 14px;
+}
+
+.footer-links a {
+  color: #4e6077;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.saving-chip {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  background: #20b8ad;
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(41 52 67 / 50%);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+}
+
+.modal {
+  width: min(1320px, 95vw);
+  max-height: 92vh;
+  overflow: auto;
+  border: 1px solid #b5c2ce;
+  border-radius: 4px;
+  background: #f6f7f9;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #b5c2ce;
+  padding: 12px 14px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 42px;
+  font-weight: 500;
+}
+
+.modal-close {
+  border: 0;
+  background: transparent;
+  color: #5b6d83;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 14px;
+}
+
+.modal-actions {
+  margin-top: 14px;
+  border-top: 2px dashed #adc2d8;
+  padding-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

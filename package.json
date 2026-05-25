@@ -5,7 +5,10 @@
   "license": "ISC",
   "author": "João Luiz de Castro",
   "scripts": {
-    "test": "node --test action-runner/tests"
+    "test": "node --test action-runner/tests",
+    "ui:dev": "npm run dev --prefix ui",
+    "ui:build": "npm run build --prefix ui",
+    "ui:test": "npm run test --prefix ui"
   },
   "dependencies": {
     "puppeteer": "^22.9.0",

@@ -346,6 +346,23 @@ Get-ScheduledTask -TaskName "YourTaskName" | Get-ScheduledTaskInfo
 
 ---
 
+## 4. Interface Desktop
+
+O repositório agora também possui um gerenciador desktop em `ui/` para configurar:
+
+- comandos pré-definidos e aliases (`reinitialize`, `touch`, `action-runner`)
+- ações customizadas do `config/config.json` (com toggle `availableOnCLI` e aliases)
+- arquivos de tarefas agendadas em `scheduled-tasks/`
+
+Comportamentos principais da UI desktop:
+
+- modais de edição salvam automaticamente após 10 segundos sem alterações e também aceitam salvar manualmente
+- modais de criação salvam apenas ao clicar em `Save`
+- estados do botão de salvar em edição: `Save`, `Saving...` e `Saved`
+- toggles das linhas de tarefas agendadas executam o script `.ps1` correspondente (`-Remove` ao desligar)
+
+Para instalação e comandos de desenvolvimento, veja [`ui/README.md`](ui/README.md).
+
 # Other versions
 
 [Readme em Inglês (EN)](README.md)
