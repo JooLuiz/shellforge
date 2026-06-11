@@ -53,7 +53,7 @@ const api: AppApi = {
     sync: async (locale: Locale) => ipcRenderer.invoke(IPC_CHANNELS.localeSync, locale),
     get: async () => ipcRenderer.invoke(IPC_CHANNELS.localeGet),
     onChanged: (callback) =>
-      subscribeIpcEvent<Locale>("locale:changed", callback, isLocale),
+      subscribeIpcEvent<Locale>(IPC_CHANNELS.localeChanged, callback, isLocale),
   },
   app: {
     onNewCustomAction: (callback) => {

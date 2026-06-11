@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface PendingDeleteItem {
   id: string;
@@ -22,30 +22,38 @@ export function useDeleteConfirmModal({
 }: UseDeleteConfirmModalInput): UseDeleteConfirmModalResult {
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isDeletingRef = useRef(false);
 
   const openDeleteModal = useCallback((id: string, label?: string): void => {
     setPendingDelete({ id, label: label ?? id });
     setIsDeleting(false);
+    isDeletingRef.current = false;
   }, []);
 
   const closeDeleteModal = useCallback((): void => {
     setPendingDelete(null);
     setIsDeleting(false);
+    isDeletingRef.current = false;
   }, []);
 
   const confirmDelete = useCallback(async (): Promise<void> => {
-    if (!pendingDelete || isDeleting) {
+    if (!pendingDelete || isDeletingRef.current) {
       return;
     }
 
+    isDeletingRef.current = true;
     setIsDeleting(true);
-    const didDelete = await deleteItem(pendingDelete.id);
-    setIsDeleting(false);
 
-    if (didDelete) {
-      closeDeleteModal();
+    try {
+      const didDelete = await deleteItem(pendingDelete.id);
+      if (didDelete) {
+        closeDeleteModal();
+      }
+    } finally {
+      isDeletingRef.current = false;
+      setIsDeleting(false);
     }
-  }, [closeDeleteModal, deleteItem, isDeleting, pendingDelete]);
+  }, [closeDeleteModal, deleteItem, pendingDelete]);
 
   return {
     pendingDelete,

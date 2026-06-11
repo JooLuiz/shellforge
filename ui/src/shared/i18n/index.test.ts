@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LOCALE,
+  formatMessage,
   getDictionary,
   isLocale,
   persistLocale,
@@ -36,5 +37,12 @@ describe("shared i18n", () => {
   it("falls back to the default locale when storage contains an invalid value", () => {
     localStorage.setItem("shell-forge-locale", "invalid-locale");
     expect(readStoredLocale()).toBe(DEFAULT_LOCALE);
+  });
+
+  it("interpolates template placeholders with formatMessage", () => {
+    expect(formatMessage("Delete action {itemName}?", { itemName: "fetchData" })).toBe(
+      "Delete action fetchData?",
+    );
+    expect(formatMessage("No placeholders", {})).toBe("No placeholders");
   });
 });

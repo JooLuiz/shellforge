@@ -96,10 +96,10 @@ export function CustomActionsTab({ config, onSave, searchQuery }: Props): JSX.El
         <DeleteConfirmModal
           closeDeleteModal={deleteModal.closeDeleteModal}
           confirmDelete={deleteModal.confirmDelete}
-          description="This permanently removes the action from your config. This cannot be undone."
-          entityLabel="action"
+          errorMessage={rows.rowSaveErrorMessage}
           isDeleting={deleteModal.isDeleting}
           itemName={deleteModal.pendingDelete.label}
+          variant="customAction"
         />
       ) : null}
     </section>

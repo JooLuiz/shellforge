@@ -67,4 +67,19 @@ export interface AppTranslationDictionary {
   scheduledTasks: {
     noSearchResults: string;
   };
+  deleteConfirm: {
+    cancel: string;
+    confirm: string;
+    deleting: string;
+    customAction: {
+      title: string;
+      description: string;
+    };
+    scheduledTask: {
+      title: string;
+      description: string;
+    };
+  };
 }
+
+export type DeleteConfirmVariant = "customAction" | "scheduledTask";

@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Predefined commands tab with category filters and enable/disable toggles.
 - Theme support (light/dark) with persisted preference.
 - Application menu (File / View / Help) with keyboard shortcuts for creating custom actions and scheduled tasks.
-- Locale support (English and Portuguese) for menu labels.
+- Locale support (English and Portuguese) for menu labels, app UI copy, and delete confirmation modals.
+- Shared `formatMessage` helper for i18n template interpolation (e.g. `{itemName}` in titles).
 - Profile health banner when PowerShell profile setup needs attention.
 - Windows NSIS installer build pipeline and GitHub Actions release workflow for desktop builds.
 - Restructured action runner with modular step handlers and expanded test coverage.
@@ -37,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared delete confirmation modal for custom actions and scheduled tasks.
 - Footer and in-app http(s) links open in the system default browser instead of a new Electron window.
 - Expanded UI test suite with coverage gate for renderer and shared modules.
+- Dedicated tests for the delete confirmation hook, modal component, and context variable inference edge cases.
+- Expanded `scheduledTaskCommand` test coverage included in the UI coverage gate.
 - ESLint configuration for root and UI packages.
 
 ### Changed
@@ -48,12 +51,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reordered API Request method dropdown so common verbs appear first and HEAD/OPTIONS appear last.
 - Hid the API Request body field for GET, HEAD, and OPTIONS methods.
 - Replaced scheduled task delete `window.confirm` with the in-app confirmation modal.
+- Delete confirmation modal resolves copy from i18n via a `variant` prop (`customAction` / `scheduledTask`) instead of hardcoded English strings in each tab.
+- Delete confirmation modal uses neutral `button-ghost` styling for Cancel and destructive `button-red` styling for Delete.
+- Delete failures surface inside the confirmation modal via an in-modal error banner, wired from tab-level error state.
+- Locale push events use the shared `IPC_CHANNELS.localeChanged` constant across main process, preload, and tests.
+- UI coverage exclusions narrowed: `scheduledTaskCommand.ts`, `contextVarInference.ts`, and `useDeleteConfirmModal.ts` are no longer excluded from the coverage gate.
 
 ### Fixed
 
 - Custom Actions tab import paths for AppCommandBridge and i18n.
 - JsonFieldEditor now persists bare interpolation templates (for example `{{context.userIds}}`) when JSON parsing fails.
 - ForEach now throws a clear error when an interpolated list is not an array after resolution.
+- Delete confirmation modal ignores rapid double-clicks while a delete request is in flight (ref-based synchronous guard in `useDeleteConfirmModal`).
 
 ## [0.1.5] - 2024-07-01
 

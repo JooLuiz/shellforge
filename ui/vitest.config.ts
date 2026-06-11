@@ -36,7 +36,6 @@ const coverageExclude = [
   "src/renderer/hooks/useFloatingDropdownPosition.ts",
   "src/renderer/tabs/custom-actions/hooks/useActionEditor.ts",
   "src/renderer/tabs/custom-actions/hooks/useActionRows.ts",
-  "src/renderer/hooks/useDeleteConfirmModal.ts",
   "src/renderer/tabs/custom-actions/hooks/useEditorLifecycle.ts",
   "src/renderer/tabs/custom-actions/hooks/useEditorPersistence.ts",
   "src/renderer/tabs/custom-actions/hooks/useEditorValidation.ts",
@@ -50,8 +49,6 @@ const coverageExclude = [
   "src/renderer/tabs/custom-actions/utils/flowViewportFocus.ts",
   "src/renderer/tabs/custom-actions/utils/actionConfigUtils.ts",
   "src/renderer/tabs/scheduled-tasks/utils/scheduledTaskCommandDraft.ts",
-  "src/shared/scheduledTaskCommand.ts",
-  "src/shared/contextVarInference.ts",
 ];
 
 export default defineConfig({

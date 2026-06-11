@@ -89,4 +89,19 @@ export const ptBrDictionary: AppTranslationDictionary = {
   scheduledTasks: {
     noSearchResults: "Nenhuma tarefa agendada corresponde à busca atual.",
   },
+  deleteConfirm: {
+    cancel: "Cancelar",
+    confirm: "Excluir",
+    deleting: "Excluindo...",
+    customAction: {
+      title: "Excluir ação {itemName}?",
+      description:
+        "Isso remove permanentemente a ação da sua configuração. Esta ação não pode ser desfeita.",
+    },
+    scheduledTask: {
+      title: "Excluir tarefa agendada {itemName}?",
+      description:
+        "Isso remove permanentemente o arquivo da tarefa agendada. Esta ação não pode ser desfeita.",
+    },
+  },
 };

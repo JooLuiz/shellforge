@@ -89,4 +89,17 @@ export const enDictionary: AppTranslationDictionary = {
   scheduledTasks: {
     noSearchResults: "No scheduled tasks match the current search.",
   },
+  deleteConfirm: {
+    cancel: "Cancel",
+    confirm: "Delete",
+    deleting: "Deleting...",
+    customAction: {
+      title: "Delete action {itemName}?",
+      description: "This permanently removes the action from your config. This cannot be undone.",
+    },
+    scheduledTask: {
+      title: "Delete scheduled task {itemName}?",
+      description: "This permanently removes the scheduled task file. This cannot be undone.",
+    },
+  },
 };

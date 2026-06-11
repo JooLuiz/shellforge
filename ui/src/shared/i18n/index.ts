@@ -2,7 +2,12 @@ import { enDictionary } from "./en";
 import { ptBrDictionary } from "./pt-BR";
 import type { AppTranslationDictionary, Locale } from "./types";
 
-export type { AppTranslationDictionary, Locale, ProfileIssueTranslation } from "./types";
+export type {
+  AppTranslationDictionary,
+  DeleteConfirmVariant,
+  Locale,
+  ProfileIssueTranslation,
+} from "./types";
 
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_STORAGE_KEY = "shell-forge-locale";
@@ -34,4 +39,10 @@ export function persistLocale(locale: Locale): void {
     return;
   }
   localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+}
+
+export function formatMessage(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce((formattedMessage, [key, value]) => {
+    return formattedMessage.replaceAll(`{${key}}`, value);
+  }, template);
 }

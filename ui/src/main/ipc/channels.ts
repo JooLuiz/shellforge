@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   themeSet: "theme:set",
   localeSync: "locale:sync",
   localeGet: "locale:get",
+  localeChanged: "locale:changed",
   appNewCustomAction: "app:newCustomAction",
   appNewScheduledTask: "app:newScheduledTask",
 } as const;

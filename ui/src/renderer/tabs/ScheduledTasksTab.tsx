@@ -105,10 +105,10 @@ export function ScheduledTasksTab({
         <DeleteConfirmModal
           closeDeleteModal={deleteModal.closeDeleteModal}
           confirmDelete={deleteModal.confirmDelete}
-          description="This permanently removes the scheduled task file. This cannot be undone."
-          entityLabel="scheduled task"
+          errorMessage={editor.errorMessage}
           isDeleting={deleteModal.isDeleting}
           itemName={deleteModal.pendingDelete.label}
+          variant="scheduledTask"
         />
       ) : null}
     </section>

@@ -64,7 +64,7 @@ describe("applicationMenu", () => {
     sendAppCommand(browserWindow, IPC_CHANNELS.appNewCustomAction);
     setApplicationMenu("en", handlers);
 
-    expect(webContents.send).toHaveBeenCalledWith("locale:changed", "pt-BR");
+    expect(webContents.send).toHaveBeenCalledWith(IPC_CHANNELS.localeChanged, "pt-BR");
     expect(webContents.send).toHaveBeenCalledWith(IPC_CHANNELS.appNewCustomAction);
     expect(setApplicationMenuMock).toHaveBeenCalled();
   });

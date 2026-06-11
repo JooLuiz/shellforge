@@ -4,8 +4,11 @@ import {
   buildAliasToActionMap,
   buildScheduledCommandString,
   composeScheduledTaskCommand,
+  createInitialActionArgs,
+  getCommandInputValue,
   parseScheduledCommandDraft,
   parseScheduledCommandMetadataLine,
+  resolveCustomActionFromAlias,
   serializeScheduledCommandMetadata,
   validateScheduledCommandDraft,
 } from "./scheduledTaskCommand";
@@ -149,5 +152,205 @@ describe("scheduledTaskCommand", () => {
       actionArgs: {},
       customCommand: "reinitialize -v",
     });
+  });
+
+  it("returns an empty command string when alias is blank", () => {
+    expect(
+      buildScheduledCommandString({
+        alias: "   ",
+        verbose: false,
+        actionArgs: {},
+      }),
+    ).toBe("");
+  });
+
+  it("resolves custom action aliases and ignores unavailable actions", () => {
+    const actions: Record<string, CustomActionUiConfig> = {
+      ...customActions,
+      hiddenAction: {
+        availableOnCLI: false,
+        aliases: ["hidden"],
+      },
+    };
+
+    expect(resolveCustomActionFromAlias("notify", actions)).toEqual({
+      actionName: "performApiRequest",
+      primaryAlias: "perform-api-request",
+    });
+    expect(resolveCustomActionFromAlias("hidden", actions)).toBeNull();
+    expect(resolveCustomActionFromAlias("   ", actions)).toBeNull();
+  });
+
+  it("parses alias commands from raw command text when metadata is absent", () => {
+    const aliasMap = buildAliasToActionMap(customActions);
+    const draft = parseScheduledCommandDraft(
+      "notify -v --arg.message=Hello",
+      null,
+      aliasMap,
+    );
+
+    expect(draft).toEqual({
+      kind: "customActionAlias",
+      alias: "perform-api-request",
+      actionName: "performApiRequest",
+      verbose: true,
+      actionArgs: { message: "Hello" },
+      customCommand: "notify -v --arg.message=Hello",
+    });
+  });
+
+  it("parses unknown commands as custom drafts", () => {
+    const aliasMap = buildAliasToActionMap(customActions);
+    const draft = parseScheduledCommandDraft("git-root --verbose", null, aliasMap);
+
+    expect(draft.kind).toBe("custom");
+    expect(draft.customCommand).toBe("git-root --verbose");
+    expect(draft.verbose).toBe(true);
+  });
+
+  it("returns command input values and initial action args", () => {
+    expect(
+      getCommandInputValue({
+        kind: "customActionAlias",
+        alias: "notify",
+        actionName: "performApiRequest",
+        verbose: false,
+        actionArgs: {},
+        customCommand: "",
+      }),
+    ).toBe("notify");
+
+    expect(
+      createInitialActionArgs({
+        required: ["message"],
+        optional: ["taskId"],
+        defaults: { message: "Hello" },
+      }),
+    ).toEqual({
+      message: "Hello",
+      taskId: "",
+    });
+  });
+
+  it("validates empty custom commands and rejects invalid metadata", () => {
+    expect(
+      validateScheduledCommandDraft(
+        {
+          kind: "custom",
+          alias: "",
+          actionName: null,
+          verbose: false,
+          actionArgs: {},
+          customCommand: "   ",
+        },
+        null,
+      ),
+    ).toBe("Command cannot be empty.");
+
+    expect(parseScheduledCommandMetadataLine("not metadata")).toBeNull();
+    expect(
+      parseScheduledCommandMetadataLine(
+        '# shellforge:scheduledCommandV1 {"version":2,"kind":"custom"}',
+      ),
+    ).toBeNull();
+    expect(
+      parseScheduledCommandMetadataLine("# shellforge:scheduledCommandV1 {invalid-json"),
+    ).toBeNull();
+  });
+
+  it("omits empty action args from metadata", () => {
+    expect(
+      composeScheduledTaskCommand({
+        kind: "customActionAlias",
+        alias: "perform-api-request",
+        actionName: "performApiRequest",
+        verbose: false,
+        actionArgs: { message: "  " },
+        customCommand: "",
+      }).commandMetadata,
+    ).toEqual({
+      version: 1,
+      kind: "customActionAlias",
+      alias: "perform-api-request",
+      actionName: "performApiRequest",
+    });
+  });
+
+  it("validates alias drafts without required schema and empty aliases", () => {
+    expect(
+      validateScheduledCommandDraft(
+        {
+          kind: "customActionAlias",
+          alias: "   ",
+          actionName: null,
+          verbose: false,
+          actionArgs: {},
+          customCommand: "",
+        },
+        null,
+      ),
+    ).toBe("Command cannot be empty.");
+
+    expect(
+      validateScheduledCommandDraft(
+        {
+          kind: "customActionAlias",
+          alias: "perform-api-request",
+          actionName: "performApiRequest",
+          verbose: false,
+          actionArgs: { message: "Hello" },
+          customCommand: "",
+        },
+        null,
+      ),
+    ).toBeNull();
+  });
+
+  it("quotes argument values that contain spaces", () => {
+    expect(
+      buildScheduledCommandString({
+        alias: "perform-api-request",
+        verbose: false,
+        actionArgs: { message: 'Say "hello"' },
+      }),
+    ).toBe('perform-api-request --arg.message="Say \\"hello\\""');
+  });
+
+  it("returns undefined metadata for empty custom drafts", () => {
+    expect(
+      composeScheduledTaskCommand({
+        kind: "custom",
+        alias: "",
+        actionName: null,
+        verbose: false,
+        actionArgs: {},
+        customCommand: "   ",
+      }).commandMetadata,
+    ).toBeUndefined();
+  });
+
+  it("parses flag-only CLI args and hydrates alias metadata without actionName", () => {
+    const aliasMap = buildAliasToActionMap(customActions);
+    const draft = parseScheduledCommandDraft(
+      "perform-api-request --arg.force",
+      null,
+      aliasMap,
+    );
+
+    expect(draft.actionArgs).toEqual({ force: "true" });
+
+    const metadataDraft = parseScheduledCommandDraft(
+      "ignored command body",
+      {
+        version: 1,
+        kind: "customActionAlias",
+        alias: "perform-api-request",
+        verbose: true,
+      },
+      aliasMap,
+    );
+
+    expect(metadataDraft.actionName).toBe("performApiRequest");
+    expect(metadataDraft.verbose).toBe(true);
   });
 });

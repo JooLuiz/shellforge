@@ -1,6 +1,7 @@
 import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from "electron";
 import type { Locale } from "../shared/i18n/types";
 import { getDictionary } from "../shared/i18n";
+import { IPC_CHANNELS } from "./ipc/channels";
 
 export interface ApplicationMenuHandlers {
   onNewCustomAction: () => void;
@@ -83,7 +84,7 @@ export function setApplicationMenu(
 }
 
 export function sendLocaleChanged(browserWindow: BrowserWindow | null, locale: Locale): void {
-  browserWindow?.webContents.send("locale:changed", locale);
+  browserWindow?.webContents.send(IPC_CHANNELS.localeChanged, locale);
 }
 
 export function sendAppCommand(
