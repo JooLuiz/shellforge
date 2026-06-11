@@ -4,7 +4,7 @@ import { formatWeekdays } from "../utils";
 interface ScheduledTaskRowProps {
   isToggling: boolean;
   onEdit: (task: ScheduledTaskRecord) => void;
-  onRemove: (fileName: string) => Promise<void>;
+  onRequestRemove: (fileName: string, displayName: string) => void;
   onToggle: (fileName: string, isEnabled: boolean) => Promise<void>;
   task: ScheduledTaskRecord;
 }
@@ -12,7 +12,7 @@ interface ScheduledTaskRowProps {
 export function ScheduledTaskRow({
   isToggling,
   onEdit,
-  onRemove,
+  onRequestRemove,
   onToggle,
   task,
 }: ScheduledTaskRowProps): JSX.Element {
@@ -32,7 +32,7 @@ export function ScheduledTaskRow({
           <button
             type="button"
             className="button button-red"
-            onClick={() => void onRemove(task.fileName)}
+            onClick={() => onRequestRemove(task.fileName, task.actionName)}
           >
             Delete
           </button>

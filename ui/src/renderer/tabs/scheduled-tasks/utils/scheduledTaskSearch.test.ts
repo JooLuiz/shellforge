@@ -30,4 +30,8 @@ describe("filterScheduledTasks", () => {
     expect(filteredTasks).toHaveLength(1);
     expect(filteredTasks[0]?.actionName).toBe("message-task");
   });
+
+  it("returns all tasks when the search query is empty", () => {
+    expect(filterScheduledTasks(scheduledTasks, "  ")).toEqual(scheduledTasks);
+  });
 });

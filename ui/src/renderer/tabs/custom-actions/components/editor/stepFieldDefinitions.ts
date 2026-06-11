@@ -1,3 +1,4 @@
+import { NESTED_STEP_ARRAY_KEY_SET } from "../../../../../shared/stepTreeTraversal";
 import { STEP_FIELD_DEFINITIONS } from "../../constants";
 import type { StepFieldDefinition } from "../../types";
 import type { ActionStep } from "../../../../../shared/types";
@@ -6,7 +7,7 @@ import type { ActionStep } from "../../../../../shared/types";
  * Keys that hold nested step arrays managed exclusively by the visual flow.
  * They are never shown as editable fields in the detail panel.
  */
-const VISUAL_FLOW_ONLY_KEYS = new Set(["steps", "try", "catch", "finally", "then", "else"]);
+const VISUAL_FLOW_ONLY_KEYS = NESTED_STEP_ARRAY_KEY_SET;
 const IF_ELSE_CONDITION_KEYS = new Set(["left", "operator", "right"]);
 
 function isHiddenStepKey(step: ActionStep, fieldKey: string): boolean {

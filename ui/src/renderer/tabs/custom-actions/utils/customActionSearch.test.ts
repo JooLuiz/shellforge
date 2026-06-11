@@ -27,4 +27,23 @@ describe("filterCustomActionNames", () => {
 
     expect(filteredActionNames).toEqual(["clockify-login"]);
   });
+
+  it("returns all actions when the search query is empty", () => {
+    expect(filterCustomActionNames(["clockify-login", "send-message"], config, "  ")).toEqual([
+      "clockify-login",
+      "send-message",
+    ]);
+  });
+
+  it("matches action names when no custom ui metadata exists", () => {
+    const sparseConfig = ensureAppConfig({
+      actionRunner: {
+        "orphan-action": { steps: [] },
+      },
+    });
+
+    expect(filterCustomActionNames(["orphan-action"], sparseConfig, "orphan")).toEqual([
+      "orphan-action",
+    ]);
+  });
 });

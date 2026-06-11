@@ -83,7 +83,7 @@ async function handleApiRequest(_resources, step, logInfo, runtimeContext) {
     headers: requestHeaders,
   };
 
-  if (requestBody !== undefined && requestMethod !== "GET" && requestMethod !== "HEAD") {
+  if (requestBody !== undefined && !["GET", "HEAD", "OPTIONS"].includes(requestMethod)) {
     requestOptions.body = requestBody;
   }
 

@@ -256,4 +256,41 @@ describe("validateActionEditorDraft", () => {
     expect(issues.some((issue) => issue.message.includes("Compare value"))).toBe(true);
     expect(issues.find((issue) => issue.message.includes("Compare value"))?.fieldKey).toBe("left");
   });
+
+  it("rejects invalid ifElse operators and missing compare-against values", () => {
+    const draft = createDraft([
+      {
+        action: "ifElse",
+        left: "{{context.flag}}",
+        operator: "invalid-operator",
+        right: "",
+        then: [],
+        else: [],
+      },
+      {
+        action: "ifElse",
+        left: "{{context.flag}}",
+        operator: "eq",
+        right: "   ",
+        then: [],
+        else: [],
+      },
+    ]);
+    const issues = validateActionEditorDraft(draft, createBaseConfig());
+
+    expect(issues.some((issue) => issue.fieldKey === "operator")).toBe(true);
+    expect(issues.some((issue) => issue.fieldKey === "right")).toBe(true);
+  });
+
+  it("rejects object fields with empty keys", () => {
+    const draft = createDraft([
+      {
+        action: "setWebStorage",
+        localStorage: { "": "value" },
+      },
+    ]);
+    const issues = validateActionEditorDraft(draft, createBaseConfig());
+
+    expect(issues.some((issue) => issue.message.includes("non-empty key"))).toBe(true);
+  });
 });

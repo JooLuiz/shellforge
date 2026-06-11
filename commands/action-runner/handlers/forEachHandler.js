@@ -25,7 +25,12 @@ async function handleForEach(resources, step, logInfo, runtimeContext) {
   const previousItem = runtimeContext[ITEM_CONTEXT_KEY];
   const previousIndex = runtimeContext[INDEX_CONTEXT_KEY];
 
-  const isListMode = Array.isArray(step.list);
+  const hasList = step.list !== undefined;
+  if (hasList && !Array.isArray(step.list)) {
+    throw new Error('[Action Runner] forEach "list" must resolve to an array');
+  }
+
+  const isListMode = hasList;
   const totalIterations = isListMode ? step.list.length : step.count;
 
   logInfo(

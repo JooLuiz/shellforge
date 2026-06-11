@@ -18,12 +18,7 @@ import {
   lookupValidationSeverity,
   type FlowValidationSeverity,
 } from "./flowValidationUtils";
-import { getThemeCssVariable } from "../../../utils/themeColors";
-
-function getFlowEdgeStyle(): { stroke: string } {
-  const strokeColor = getThemeCssVariable("--color-flow-edge");
-  return { stroke: strokeColor.length > 0 ? strokeColor : "#94aec6" };
-}
+import { buildFlowEdgeProps } from "./flowEdgeStyle";
 const INSERT_NODE_X = STEP_NODE_WIDTH / 2 - INSERT_NODE_SIZE / 2;
 
 type StepValidationSeverityMap = Map<string, FlowValidationSeverity>;
@@ -108,14 +103,14 @@ export function buildStepListFlow({
           type: "straight",
           source: insertNodeId,
           target: stepNodeId,
-          style: getFlowEdgeStyle(),
+          ...buildFlowEdgeProps(),
         },
         {
           id: `${stepNodeId}-${nextInsertNodeId}`,
           type: "straight",
           source: stepNodeId,
           target: nextInsertNodeId,
-          style: getFlowEdgeStyle(),
+          ...buildFlowEdgeProps(),
         },
       );
 
@@ -143,14 +138,14 @@ export function buildStepListFlow({
           type: "straight",
           source: insertNodeId,
           target: stepNodeId,
-          style: getFlowEdgeStyle(),
+          ...buildFlowEdgeProps(),
         },
         {
           id: `${stepNodeId}-${nextInsertNodeId}`,
           type: "straight",
           source: stepNodeId,
           target: nextInsertNodeId,
-          style: getFlowEdgeStyle(),
+          ...buildFlowEdgeProps(),
         },
       );
 

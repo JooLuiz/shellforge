@@ -1,49 +1,27 @@
-import type { Dispatch, SetStateAction } from "react";
-import type { ActionConfig, ActionStep } from "../../../../../shared/types";
-import type { StepPath } from "../../types";
-import type { FlowValidationSeverity } from "../../utils/flowValidationUtils";
+import { useActionEditorContext } from "../../context/ActionEditorContext";
 import { isBlockStepAction } from "../../utils/flowScope";
 import { stepPathToKey } from "../../utils/stepPath";
 import { StepFieldsEditor } from "./StepFieldsEditor";
 
-interface StepDetailsPanelProps {
-  actionRunner: Record<string, ActionConfig>;
-  changeSelectedStepAction: (nextActionType: string) => void;
-  configuredActionNames: string[];
-  contextVariables: string[];
-  deleteSelectedStep: () => void;
-  enterBlockScope: (blockStepPath: StepPath) => void;
-  fieldValidationByKey: Map<string, FlowValidationSeverity>;
-  flowContainerPath: StepPath;
-  jsonDraftByFieldId: Record<string, string>;
-  jsonErrorByFieldId: Record<string, string>;
-  selectedStep: ActionStep | null;
-  selectedStepPath: StepPath | null;
-  /** Stable string key for the selected step path, used to namespace field draft IDs. */
-  selectedStepPathKey: string;
-  setJsonDraftByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
-  setJsonErrorByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
-  updateSelectedStep: (updater: (step: ActionStep) => ActionStep) => void;
-}
+export function StepDetailsPanel(): JSX.Element {
+  const { actionRunner, configuredActionNames, editor } = useActionEditorContext();
+  const {
+    changeSelectedStepAction,
+    contextVariables,
+    deleteSelectedStep,
+    enterBlockScope,
+    fieldValidationByKey,
+    flowContainerPath,
+    jsonDraftByFieldId,
+    jsonErrorByFieldId,
+    selectedStep,
+    selectedStepPath,
+    selectedStepPathKey,
+    setJsonDraftByFieldId,
+    setJsonErrorByFieldId,
+    updateSelectedStep,
+  } = editor;
 
-export function StepDetailsPanel({
-  actionRunner,
-  changeSelectedStepAction,
-  configuredActionNames,
-  contextVariables,
-  deleteSelectedStep,
-  enterBlockScope,
-  fieldValidationByKey,
-  flowContainerPath,
-  jsonDraftByFieldId,
-  jsonErrorByFieldId,
-  selectedStep,
-  selectedStepPath,
-  selectedStepPathKey,
-  setJsonDraftByFieldId,
-  setJsonErrorByFieldId,
-  updateSelectedStep,
-}: StepDetailsPanelProps): JSX.Element {
   const hasSelectedStep = selectedStep !== null;
   const isInsideSelectedBlockScope =
     selectedStepPath !== null &&

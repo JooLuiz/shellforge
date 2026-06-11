@@ -122,3 +122,47 @@ test("apiRequest stores body on HTTP error when ignoreHttpErrors is true", async
   assert.strictEqual(runtimeContext.validationError.status, 422);
   assert.deepStrictEqual(runtimeContext.validationError.body, responseBody);
 });
+
+test("apiRequest does not attach body for HEAD requests", async (testContext) => {
+  let capturedRequestOptions = null;
+  const mockResponse = createMockResponse({ status: 200, headersMap: {}, body: "" });
+  mockResponse.text = async () => "";
+
+  testContext.mock.method(globalThis, "fetch", async (_url, requestOptions) => {
+    capturedRequestOptions = requestOptions;
+    return mockResponse;
+  });
+
+  const step = {
+    method: "HEAD",
+    url: "https://api.example.com/resource",
+    body: { should: "not-send" },
+  };
+
+  await handleApiRequest({}, step, noopLogInfo, {});
+
+  assert.strictEqual(capturedRequestOptions.method, "HEAD");
+  assert.equal(capturedRequestOptions.body, undefined);
+});
+
+test("apiRequest does not attach body for OPTIONS requests", async (testContext) => {
+  let capturedRequestOptions = null;
+  const mockResponse = createMockResponse({ status: 204, headersMap: {}, body: "" });
+  mockResponse.text = async () => "";
+
+  testContext.mock.method(globalThis, "fetch", async (_url, requestOptions) => {
+    capturedRequestOptions = requestOptions;
+    return mockResponse;
+  });
+
+  const step = {
+    method: "OPTIONS",
+    url: "https://api.example.com/resource",
+    body: { should: "not-send" },
+  };
+
+  await handleApiRequest({}, step, noopLogInfo, {});
+
+  assert.strictEqual(capturedRequestOptions.method, "OPTIONS");
+  assert.equal(capturedRequestOptions.body, undefined);
+});

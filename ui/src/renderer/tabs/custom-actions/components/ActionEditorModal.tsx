@@ -1,30 +1,14 @@
 import ReactFlow, {
   Background,
   Controls,
-  type Edge,
-  type Node,
 } from "reactflow";
 import { useRef } from "react";
-import type { Dispatch, SetStateAction } from "react";
-import type { ActionConfig, ActionStep } from "../../../../shared/types";
-import type {
-  ActionEditorDraft,
-  EditSaveStatus,
-  EditorMode,
-  FlowBreadcrumbSegment,
-  InsertionPoint,
-  StepPath,
-  StepUpdater,
-} from "../types";
+import type { ActionEditorDraft } from "../types";
 import { ModalCloseButton } from "../../../components/ModalCloseButton";
 import { useModalDismiss } from "../../../hooks/useModalDismiss";
+import { useActionEditorContext } from "../context/ActionEditorContext";
 import { useFlowEditorViewport } from "../hooks/useFlowEditorViewport";
 import { getActionSteps } from "../utils/stepUtils";
-import type {
-  DraftFieldValidationKey,
-  FlowValidationBannerItem,
-  FlowValidationSeverity,
-} from "../utils/flowValidationUtils";
 import { customActionFlowNodeTypes } from "./flow/CustomActionFlowNodes";
 import { FlowScopeBreadcrumb } from "./flow/FlowScopeBreadcrumb";
 import { FlowValidationBanner } from "./flow/FlowValidationBanner";
@@ -39,79 +23,35 @@ function readBrowserProfileValue(editorDraft: ActionEditorDraft): string {
   return typeof browserProfile === "string" ? browserProfile : "";
 }
 
-interface ActionEditorModalProps {
-  actionRunner: Record<string, ActionConfig>;
-  addStepAtInsertionPoint: (insertionPoint: InsertionPoint) => void;
-  changeSelectedStepAction: (nextActionType: string) => void;
-  closeEditorModal: () => void;
-  configuredActionNames: string[];
-  contextVariables: string[];
-  deleteSelectedStep: () => void;
-  draftFieldValidationState: Partial<Record<DraftFieldValidationKey, FlowValidationSeverity>>;
-  editorDraft: ActionEditorDraft;
-  editorMode: Exclude<EditorMode, null>;
-  editorSaveButtonLabel: string;
-  editorSaveStatus: EditSaveStatus;
-  edges: Edge[];
-  enterBlockScope: (blockStepPath: StepPath) => void;
-  fieldValidationByKey: Map<string, FlowValidationSeverity>;
-  flowBreadcrumbSegments: FlowBreadcrumbSegment[];
-  flowContainerPath: StepPath;
-  flowValidationBannerItems: FlowValidationBannerItem[];
-  hasBrowserSteps: boolean;
-  isSavingEditor: boolean;
-  jsonDraftByFieldId: Record<string, string>;
-  jsonErrorByFieldId: Record<string, string>;
-  nodes: Node[];
-  persistEditorDraft: () => Promise<void>;
-  selectedStep: ActionStep | null;
-  selectedStepPath: StepPath | null;
-  selectedStepPathKey: string;
-  setJsonDraftByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
-  setJsonErrorByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
-  setFlowContainerPath: (nextPath: StepPath) => void;
-  setSelectedStepPath: (nextPath: StepPath | null) => void;
-  updateActionName: (nextActionName: string) => void;
-  updateBrowserProfile: (nextProfile: string) => void;
-  updateSelectedStep: (updater: StepUpdater) => void;
-}
+export function ActionEditorModal(): JSX.Element {
+  const { editor } = useActionEditorContext();
+  const {
+    addStepAtInsertionPoint,
+    closeEditorModal,
+    draftFieldValidationState,
+    editorDraft,
+    editorMode,
+    editorSaveButtonLabel,
+    editorSaveStatus,
+    edges,
+    enterBlockScope,
+    flowBreadcrumbSegments,
+    flowContainerPath,
+    flowValidationBannerItems,
+    hasBrowserSteps,
+    isSavingEditor,
+    nodes,
+    persistEditorDraft,
+    setFlowContainerPath,
+    setSelectedStepPath,
+    updateActionName,
+    updateBrowserProfile,
+  } = editor;
 
-export function ActionEditorModal({
-  actionRunner,
-  addStepAtInsertionPoint,
-  changeSelectedStepAction,
-  closeEditorModal,
-  configuredActionNames,
-  contextVariables,
-  deleteSelectedStep,
-  draftFieldValidationState,
-  editorDraft,
-  editorMode,
-  editorSaveButtonLabel,
-  editorSaveStatus,
-  edges,
-  enterBlockScope,
-  fieldValidationByKey,
-  flowBreadcrumbSegments,
-  flowContainerPath,
-  flowValidationBannerItems,
-  hasBrowserSteps,
-  isSavingEditor,
-  jsonDraftByFieldId,
-  jsonErrorByFieldId,
-  nodes,
-  persistEditorDraft,
-  selectedStep,
-  selectedStepPath,
-  selectedStepPathKey,
-  setJsonDraftByFieldId,
-  setJsonErrorByFieldId,
-  setFlowContainerPath,
-  setSelectedStepPath,
-  updateActionName,
-  updateBrowserProfile,
-  updateSelectedStep,
-}: ActionEditorModalProps): JSX.Element {
+  if (!editorDraft || !editorMode) {
+    throw new Error("ActionEditorModal requires an active editor draft and mode");
+  }
+
   const flowCanvasRef = useRef<HTMLDivElement>(null);
   const rootSteps = getActionSteps(editorDraft.actionConfig);
 
@@ -177,24 +117,7 @@ export function ActionEditorModal({
               <p className="flow-canvas-hint">Shift + scroll to pan vertically.</p>
             </div>
 
-            <StepDetailsPanel
-              actionRunner={actionRunner}
-              changeSelectedStepAction={changeSelectedStepAction}
-              configuredActionNames={configuredActionNames}
-              contextVariables={contextVariables}
-              deleteSelectedStep={deleteSelectedStep}
-              enterBlockScope={enterBlockScope}
-              fieldValidationByKey={fieldValidationByKey}
-              flowContainerPath={flowContainerPath}
-              jsonDraftByFieldId={jsonDraftByFieldId}
-              jsonErrorByFieldId={jsonErrorByFieldId}
-              selectedStep={selectedStep}
-              selectedStepPath={selectedStepPath}
-              selectedStepPathKey={selectedStepPathKey}
-              setJsonDraftByFieldId={setJsonDraftByFieldId}
-              setJsonErrorByFieldId={setJsonErrorByFieldId}
-              updateSelectedStep={updateSelectedStep}
-            />
+            <StepDetailsPanel />
           </div>
 
           <div className="modal-actions">

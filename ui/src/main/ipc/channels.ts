@@ -11,4 +11,8 @@ export const IPC_CHANNELS = {
   customActionsRun: "customActions:run",
   browserProfilesList: "browserProfiles:list",
   themeSet: "theme:set",
+  localeSync: "locale:sync",
+  localeGet: "locale:get",
+  appNewCustomAction: "app:newCustomAction",
+  appNewScheduledTask: "app:newScheduledTask",
 } as const;

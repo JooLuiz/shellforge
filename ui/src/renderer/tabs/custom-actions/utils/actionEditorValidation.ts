@@ -9,6 +9,7 @@ import {
   buildSelfInvocationTokens,
   shellStepInvokesSelf,
 } from "./shellSelfInvocationUtils";
+import { collectStepsWithPaths } from "../../../../shared/stepTreeTraversal";
 import { getActionSteps, isRecord } from "./stepUtils";
 
 export interface ActionEditorValidationIssue {
@@ -17,40 +18,7 @@ export interface ActionEditorValidationIssue {
   message: string;
 }
 
-const NESTED_STEP_ARRAY_KEYS = ["steps", "try", "catch", "finally", "then", "else"] as const;
 const IF_ELSE_BRANCH_KEYS = new Set(["then", "else"]);
-
-interface StepWithPath {
-  step: ActionStep;
-  path: StepPath;
-}
-
-function collectStepsWithPaths(
-  steps: ActionStep[],
-  parentPath: StepPath,
-  arrayKey: string,
-): StepWithPath[] {
-  const collected: StepWithPath[] = [];
-
-  steps.forEach((step, stepIndex) => {
-    const currentPath: StepPath = [...parentPath, { arrayKey, stepIndex }];
-    collected.push({ step, path: currentPath });
-
-    NESTED_STEP_ARRAY_KEYS.forEach((nestedKey) => {
-      const nestedValue = step[nestedKey];
-      if (!Array.isArray(nestedValue)) {
-        return;
-      }
-      const nestedSteps = nestedValue.filter(
-        (entry): entry is ActionStep =>
-          typeof entry === "object" && entry !== null && typeof entry.action === "string",
-      );
-      collected.push(...collectStepsWithPaths(nestedSteps, currentPath, nestedKey));
-    });
-  });
-
-  return collected;
-}
 
 export function isInsideIfElseBranch(stepPath: StepPath, rootSteps: ActionStep[]): boolean {
   let parentPath: StepPath = [];

@@ -21,9 +21,7 @@ import { getCommandInputValue } from "../../../../shared/scheduledTaskCommand";
 
 interface UseScheduledTaskEditorInput {
   actionRunner: Record<string, ActionConfig>;
-  createRequestToken: number;
   customActions: Record<string, CustomActionUiConfig>;
-  onCreateRequestConsumed?: () => void;
   refreshScheduledTasks: () => Promise<void>;
 }
 
@@ -56,9 +54,7 @@ function syncTaskInputFromCommandDraft(
 
 export function useScheduledTaskEditor({
   actionRunner,
-  createRequestToken,
   customActions,
-  onCreateRequestConsumed,
   refreshScheduledTasks,
 }: UseScheduledTaskEditorInput): UseScheduledTaskEditorResult {
   const [modalMode, setModalMode] = useState<ScheduledTaskEditorState["modalMode"]>(null);
@@ -104,14 +100,6 @@ export function useScheduledTaskEditor({
     setLastSavedSnapshot("");
     setModalMode("create");
   }, []);
-
-  useEffect(() => {
-    if (createRequestToken <= 0) {
-      return;
-    }
-    openCreate();
-    onCreateRequestConsumed?.();
-  }, [createRequestToken, onCreateRequestConsumed, openCreate]);
 
   const openEdit = useCallback(
     (task: ScheduledTaskRecord): void => {

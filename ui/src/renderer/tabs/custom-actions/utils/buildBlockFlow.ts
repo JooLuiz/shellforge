@@ -26,12 +26,7 @@ import {
   lookupValidationSeverity,
   type FlowValidationSeverity,
 } from "./flowValidationUtils";
-import { getThemeCssVariable } from "../../../utils/themeColors";
-
-function getFlowEdgeStyle(): { stroke: string } {
-  const strokeColor = getThemeCssVariable("--color-flow-edge");
-  return { stroke: strokeColor.length > 0 ? strokeColor : "#94aec6" };
-}
+import { buildFlowEdgeProps } from "./flowEdgeStyle";
 
 type StepValidationSeverityMap = Map<string, FlowValidationSeverity>;
 
@@ -115,7 +110,7 @@ function buildColumnNodes(
         type: "straight",
         source: insertNodeId,
         target: stepNodeId,
-        style: getFlowEdgeStyle(),
+        ...buildFlowEdgeProps(),
       });
 
       const nextInsertNodeId = `${groupNodeId}__${arrayKey}__insert-${insertionIndex + 1}`;
@@ -124,7 +119,7 @@ function buildColumnNodes(
         type: "straight",
         source: stepNodeId,
         target: nextInsertNodeId,
-        style: getFlowEdgeStyle(),
+        ...buildFlowEdgeProps(),
       });
 
       currentY += STEP_NODE_HEIGHT + BLOCK_LANE_GAP;

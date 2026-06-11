@@ -9,6 +9,34 @@ on:
       - main
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            ui/package-lock.json
+            page/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install UI dependencies
+        run: npm ci --prefix ui
+
+      - name: Install page dependencies
+        run: npm ci --prefix page
+
+      - name: Run lint
+        run: npm run lint
+
   test-action-runner:
     runs-on: windows-latest
     steps:
@@ -25,8 +53,8 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Run action-runner and command-lib tests
-        run: npm test
+      - name: Run action-runner and command-lib tests with coverage
+        run: npm run test:coverage
 
   test-ui:
     runs-on: windows-latest
@@ -49,7 +77,7 @@ jobs:
       - name: Install UI dependencies
         run: npm ci --prefix ui
 
-      - name: Run UI tests
+      - name: Run UI tests with coverage
         run: npm run ui:test
 
   test-page:
@@ -68,5 +96,5 @@ jobs:
       - name: Install page dependencies
         run: npm ci --prefix page
 
-      - name: Build docs site
-        run: npm run page:build
+      - name: Lint and build docs site
+        run: npm run page:lint && npm run page:build

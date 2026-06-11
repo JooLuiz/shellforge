@@ -3,7 +3,7 @@ import { ScheduledTaskRow } from "./ScheduledTaskRow";
 
 interface ScheduledTasksListProps {
   onEditTask: (task: ScheduledTaskRecord) => void;
-  onRemoveTask: (fileName: string) => Promise<void>;
+  onRequestRemoveTask: (fileName: string, displayName: string) => void;
   onToggleTask: (fileName: string, isEnabled: boolean) => Promise<void>;
   tasks: ScheduledTaskRecord[];
   togglingTaskNames: string[];
@@ -11,7 +11,7 @@ interface ScheduledTasksListProps {
 
 export function ScheduledTasksList({
   onEditTask,
-  onRemoveTask,
+  onRequestRemoveTask,
   onToggleTask,
   tasks,
   togglingTaskNames,
@@ -24,7 +24,7 @@ export function ScheduledTasksList({
           task={task}
           isToggling={togglingTaskNames.includes(task.fileName)}
           onEdit={onEditTask}
-          onRemove={onRemoveTask}
+          onRequestRemove={onRequestRemoveTask}
           onToggle={onToggleTask}
         />
       ))}

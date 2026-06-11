@@ -8,6 +8,11 @@
  */
 
 const TEMPLATE_REGEX = /\{\{\s*(context|env)\.([^}]+)\s*\}\}/g;
+const CONTEXT_TEMPLATE_REFERENCE_REGEX = /^\{\{\s*(context|env)\.[^}]+\s*\}\}$/;
+
+function isContextTemplateReference(value) {
+  return typeof value === "string" && CONTEXT_TEMPLATE_REFERENCE_REGEX.test(value.trim());
+}
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -100,4 +105,5 @@ function interpolateStep(step, runtimeContext) {
 
 module.exports = {
   interpolateStep,
+  isContextTemplateReference,
 };

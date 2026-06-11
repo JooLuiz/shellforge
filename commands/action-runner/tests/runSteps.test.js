@@ -68,3 +68,22 @@ test("runSteps interpolates non-block step fields", async () => {
 
   assert.equal(runtimeContext.message, "hello world");
 });
+
+test("runSteps resolves forEach list from context template reference", async () => {
+  const resources = createIntegrationResources();
+  const runtimeContext = { userIds: ["alpha", "beta"] };
+
+  const parentStep = {
+    action: "forEach",
+    list: "{{context.userIds}}",
+    steps: [
+      { action: "setVariable", source: "{{context.item}}", storeAs: "lastItem" },
+    ],
+  };
+
+  await runSteps(resources, [parentStep], () => {}, runtimeContext);
+
+  assert.equal(runtimeContext.lastItem, "beta");
+  assert.equal("item" in runtimeContext, false);
+  assert.equal("index" in runtimeContext, false);
+});

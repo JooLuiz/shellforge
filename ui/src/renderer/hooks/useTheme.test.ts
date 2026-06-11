@@ -5,7 +5,7 @@ import { act } from "react";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { THEME_STORAGE_KEY } from "../theme/theme";
-import { useTheme } from "./useTheme";
+import { applyInitialTheme, useTheme } from "./useTheme";
 
 function ThemeProbe({
   onChange,
@@ -72,5 +72,20 @@ describe("useTheme", () => {
     expect(latestTheme?.theme).toBe("light");
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+    expect(latestTheme?.isLight).toBe(true);
+    expect(latestTheme?.isDark).toBe(false);
+  });
+
+  it("applies the resolved theme during initial bootstrap", () => {
+    localStorage.setItem(THEME_STORAGE_KEY, "dark");
+    window.api = {
+      theme: {
+        set: vi.fn(),
+      },
+    } as unknown as typeof window.api;
+
+    expect(applyInitialTheme()).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(window.api?.theme?.set).toHaveBeenCalledWith("dark");
   });
 });

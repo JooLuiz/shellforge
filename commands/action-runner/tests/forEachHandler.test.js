@@ -107,3 +107,17 @@ test("forEach with empty list does not call runSteps", async () => {
 
   assert.equal(callCount, 0);
 });
+
+test("forEach throws when list does not resolve to an array", async () => {
+  const resources = createMockResources(async () => {});
+  const step = {
+    action: "forEach",
+    list: "still-not-an-array",
+    steps: [{ action: "shell", command: "echo" }],
+  };
+
+  await assert.rejects(
+    () => handleForEach(resources, step, noopLogInfo, {}),
+    /forEach "list" must resolve to an array/
+  );
+});

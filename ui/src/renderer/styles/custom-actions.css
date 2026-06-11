@@ -513,3 +513,7 @@
   pointer-events: none;
   color: var(--color-text-icon);
 }
+
+.flow-canvas .react-flow__edge-path.flow-edge {
+  stroke: var(--color-flow-edge);
+}

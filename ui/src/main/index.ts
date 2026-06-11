@@ -8,6 +8,8 @@ import { registerConfigIpcHandlers } from "./ipc/config";
 import { registerProfileIpcHandlers } from "./ipc/profile";
 import { registerScheduledTasksIpcHandlers } from "./ipc/scheduledTasks";
 import { registerThemeIpcHandlers } from "./ipc/theme";
+import { registerLocaleIpcHandlers } from "./ipc/locale";
+import { openExternalHttpUrl } from "./openExternalUrl";
 import { resolveWindowIconPath } from "./windowIconPath";
 import { ensurePackagedUserData } from "./services/packagedDataBootstrap";
 
@@ -56,6 +58,11 @@ function createWindow(): void {
     }
   });
 
+  browserWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openExternalHttpUrl(url);
+    return { action: "deny" };
+  });
+
   browserWindow.setTitle("ShellForge");
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -78,6 +85,7 @@ app.whenReady().then(() => {
   registerBrowserProfilesIpcHandlers();
   registerCustomActionsIpcHandlers();
   registerThemeIpcHandlers(() => mainBrowserWindow);
+  registerLocaleIpcHandlers(() => mainBrowserWindow);
   createWindow();
 
   app.on("activate", () => {

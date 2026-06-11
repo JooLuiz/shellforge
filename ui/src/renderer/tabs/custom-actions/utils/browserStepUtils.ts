@@ -1,8 +1,6 @@
 import type { ActionStep } from "../../../../shared/types";
+import { forEachNestedStepArray } from "../../../../shared/stepTreeTraversal";
 import { BROWSER_STEP_ACTION_SET } from "../constants";
-import { isActionStep } from "./stepUtils";
-
-const NESTED_STEP_ARRAY_KEYS = ["steps", "try", "catch", "finally", "then", "else"] as const;
 
 function stepUsesBrowser(step: ActionStep): boolean {
   return BROWSER_STEP_ACTION_SET.has(step.action);
@@ -17,14 +15,13 @@ function stepTreeUsesBrowser(step: ActionStep): boolean {
     return true;
   }
 
-  return NESTED_STEP_ARRAY_KEYS.some((nestedKey) => {
-    const nestedValue = step[nestedKey];
-    if (!Array.isArray(nestedValue)) {
-      return false;
+  let usesBrowser = false;
+  forEachNestedStepArray(step, (_nestedKey, nestedSteps) => {
+    if (nestedStepsUseBrowser(nestedSteps)) {
+      usesBrowser = true;
     }
-    const nestedSteps = nestedValue.filter(isActionStep);
-    return nestedStepsUseBrowser(nestedSteps);
   });
+  return usesBrowser;
 }
 
 export function actionUsesBrowserSteps(steps: ActionStep[]): boolean {

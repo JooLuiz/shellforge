@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { Node, ReactFlowInstance } from "reactflow";
 import type { ActionStep } from "../../../../shared/types";
 import {
+  findFlowNodeById,
+  findFlowNodeForStepPath,
+  focusDefaultFlowViewport,
+  focusFlowOnNode,
+  focusFlowOnStepPath,
   getDefaultFocusInsertNodeId,
   getDefaultFocusStepPath,
 } from "./flowViewportFocus";
@@ -80,5 +86,57 @@ describe("getDefaultFocusInsertNodeId", () => {
   it("returns scoped insert node id for nested scope", () => {
     const forEachPath = [{ arrayKey: "steps", stepIndex: 1 }];
     expect(getDefaultFocusInsertNodeId(forEachPath)).toBe("scope-steps.1__insert-0");
+  });
+});
+
+describe("flow viewport node lookup and focus", () => {
+  const stepPath = [{ arrayKey: "steps", stepIndex: 0 }];
+  const nodes: Node[] = [
+    {
+      id: "root__insert-0",
+      type: "insertNode",
+      position: { x: 0, y: 0 },
+      data: {},
+    },
+    {
+      id: "root__step-0",
+      type: "stepNode",
+      position: { x: 10, y: 20 },
+      width: 100,
+      height: 40,
+      data: { stepPath },
+    },
+    {
+      id: "root__block-0",
+      type: "blockGroupNode",
+      position: { x: 0, y: 0 },
+      data: { stepPath },
+    },
+  ];
+
+  it("finds nodes by id and step path, preferring block group matches", () => {
+    expect(findFlowNodeById(nodes, "root__insert-0")?.id).toBe("root__insert-0");
+    expect(findFlowNodeForStepPath(nodes, stepPath)?.type).toBe("blockGroupNode");
+  });
+
+  it("focuses the viewport on a node or step path", () => {
+    const setCenter = vi.fn();
+    const reactFlowInstance = { setCenter } as unknown as ReactFlowInstance;
+    const targetNode = nodes[1]!;
+
+    focusFlowOnNode(reactFlowInstance, targetNode);
+    expect(setCenter).toHaveBeenCalledWith(60, 40, expect.objectContaining({ zoom: 1.15 }));
+
+    expect(focusFlowOnStepPath(reactFlowInstance, nodes, stepPath)).toBe(true);
+    expect(focusFlowOnStepPath(reactFlowInstance, [], stepPath)).toBe(false);
+  });
+
+  it("falls back to the default insert node when no focus step exists", () => {
+    const setCenter = vi.fn();
+    const reactFlowInstance = { setCenter } as unknown as ReactFlowInstance;
+    const emptySteps: ActionStep[] = [];
+
+    focusDefaultFlowViewport(reactFlowInstance, nodes, emptySteps, [], 1);
+    expect(setCenter).toHaveBeenCalled();
   });
 });

@@ -19,7 +19,10 @@ interface JsonFieldEditorProps {
   setJsonDraftByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
   setJsonErrorByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
   updateSelectedStep: (updater: StepUpdater) => void;
+  supportsInterpolation?: boolean;
 }
+
+const CONTEXT_TEMPLATE_REFERENCE_REGEX = /^\{\{\s*(context|env)\.[^}]+\s*\}\}$/;
 
 function applyJsonDraftChange(
   nextRawValue: string,
@@ -28,6 +31,7 @@ function applyJsonDraftChange(
   setJsonDraftByFieldId: Dispatch<SetStateAction<Record<string, string>>>,
   setJsonErrorByFieldId: Dispatch<SetStateAction<Record<string, string>>>,
   updateSelectedStep: (updater: StepUpdater) => void,
+  supportsInterpolation = false,
 ): void {
   setJsonDraftByFieldId((previousDraftByFieldId) => ({
     ...previousDraftByFieldId,
@@ -45,6 +49,19 @@ function applyJsonDraftChange(
       [selectedFieldId]: "",
     }));
   } catch {
+    const trimmedValue = nextRawValue.trim();
+    if (supportsInterpolation && CONTEXT_TEMPLATE_REFERENCE_REGEX.test(trimmedValue)) {
+      updateSelectedStep((stepDraft) => ({
+        ...stepDraft,
+        [fieldKey]: trimmedValue,
+      }));
+      setJsonErrorByFieldId((previousErrorByFieldId) => ({
+        ...previousErrorByFieldId,
+        [selectedFieldId]: "",
+      }));
+      return;
+    }
+
     setJsonErrorByFieldId((previousErrorByFieldId) => ({
       ...previousErrorByFieldId,
       [selectedFieldId]: "Invalid JSON format.",
@@ -91,6 +108,7 @@ export function JsonFieldEditor({
         setJsonDraftByFieldId,
         setJsonErrorByFieldId,
         updateSelectedStep,
+        supportsInterpolation,
       );
     },
   });

@@ -103,8 +103,25 @@ test("normalizeSteps rejects forEach when list is not an array", () => {
 
   assert.throws(
     () => normalizeSteps(actionConfig, "forEach-bad-list"),
-    /forEach "list" must be an array/
+    /forEach "list" must be an array or a context\/env template reference/
   );
+});
+
+test("normalizeSteps accepts forEach with a context template list reference", () => {
+  const actionConfig = {
+    steps: [
+      {
+        action: "forEach",
+        list: "{{context.userIds}}",
+        steps: [{ action: "shell", command: "echo {{context.item}}" }],
+      },
+    ],
+  };
+
+  const steps = normalizeSteps(actionConfig, "forEach-context-list");
+
+  assert.equal(steps.length, 1);
+  assert.equal(steps[0].list, "{{context.userIds}}");
 });
 
 test("normalizeSteps rejects forEach when count is not a positive integer", () => {

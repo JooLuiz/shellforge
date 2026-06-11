@@ -1,23 +1,13 @@
 import type { ActionStep, ContextValidationWarning, StepPath } from "./types";
 import { inferContextVariablesBeforeStep } from "./contextVarInference";
+import {
+  collectStepsWithPaths,
+  NESTED_STEP_ARRAY_KEY_SET,
+} from "./stepTreeTraversal";
 
 export { inferContextVariablesBeforeStep } from "./contextVarInference";
 
 const CONTEXT_PLACEHOLDER_REGEX = /\{\{\s*context\.([a-zA-Z0-9_.-]+)\s*\}\}/g;
-
-const NESTED_STEP_ARRAY_KEYS = new Set([
-  "steps",
-  "try",
-  "catch",
-  "finally",
-  "then",
-  "else",
-]);
-
-interface StepWithPath {
-  step: ActionStep;
-  path: StepPath;
-}
 
 function flattenStepStringFields(
   input: unknown,
@@ -41,41 +31,13 @@ function flattenStepStringFields(
   }
 
   Object.entries(input as Record<string, unknown>).forEach(([key, value]) => {
-    if (NESTED_STEP_ARRAY_KEYS.has(key)) {
+    if (NESTED_STEP_ARRAY_KEY_SET.has(key)) {
       return;
     }
 
     const nextPath = basePath.length > 0 ? `${basePath}.${key}` : key;
     flattenStepStringFields(value, nextPath, collector);
   });
-}
-
-function collectStepsWithPaths(
-  steps: ActionStep[],
-  parentPath: StepPath,
-  arrayKey: string,
-): StepWithPath[] {
-  const collected: StepWithPath[] = [];
-
-  steps.forEach((step, stepIndex) => {
-    const currentPath: StepPath = [...parentPath, { arrayKey, stepIndex }];
-    collected.push({ step, path: currentPath });
-
-    NESTED_STEP_ARRAY_KEYS.forEach((nestedKey) => {
-      const nestedValue = step[nestedKey];
-      if (!Array.isArray(nestedValue)) {
-        return;
-      }
-
-      const nestedSteps = nestedValue.filter(
-        (entry): entry is ActionStep =>
-          typeof entry === "object" && entry !== null && typeof entry.action === "string",
-      );
-      collected.push(...collectStepsWithPaths(nestedSteps, currentPath, nestedKey));
-    });
-  });
-
-  return collected;
 }
 
 function collectVariablesProducedByStep(step: ActionStep): string[] {

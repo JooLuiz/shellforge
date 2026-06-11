@@ -62,4 +62,41 @@ describe("ensureAppConfig", () => {
       expect(normalizedConfig.ui.predefinedCommands[commandKey].alias).toBe(commandKey);
     });
   });
+
+  it("normalizes predefined command aliases and enabled flags from partial configs", () => {
+    const normalizedConfig = ensureAppConfig({
+      actionRunner: {},
+      ui: {
+        predefinedCommands: {
+          touch: { enabled: true, alias: "  tap  " },
+          reinitialize: "invalid",
+        },
+      },
+    });
+
+    expect(normalizedConfig.ui.predefinedCommands.touch.enabled).toBe(true);
+    expect(normalizedConfig.ui.predefinedCommands.touch.alias).toBe("tap");
+    expect(normalizedConfig.ui.predefinedCommands.reinitialize.enabled).toBe(false);
+  });
+
+  it("creates custom action ui defaults for action runner entries", () => {
+    const normalizedConfig = ensureAppConfig({
+      actionRunner: {
+        "orphan-action": { steps: [] },
+      },
+      ui: {
+        customActions: {
+          "orphan-action": {
+            aliases: ["", "valid-alias", 123],
+          },
+        },
+      },
+    });
+
+    expect(normalizedConfig.ui.customActions["orphan-action"].availableOnCLI).toBe(false);
+    expect(normalizedConfig.ui.customActions["orphan-action"].aliases).toEqual([
+      "orphan-action",
+      "valid-alias",
+    ]);
+  });
 });

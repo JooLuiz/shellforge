@@ -9,8 +9,6 @@ export interface ScheduledTasksTabProps {
   scheduledTasksLoadError: string | null;
   commandOptions: string[];
   searchQuery: string;
-  createRequestToken?: number;
-  onCreateRequestConsumed?: () => void;
 }
 
 export type ModalMode = "create" | "edit" | null;

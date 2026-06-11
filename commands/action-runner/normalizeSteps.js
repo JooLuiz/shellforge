@@ -7,6 +7,8 @@
  * See also: action-runner/runSteps.js, config/config-example.json
  */
 
+const { isContextTemplateReference } = require("./interpolateContext");
+
 const LEGACY_FIELDS = [
   "url",
   "usernameInput",
@@ -163,9 +165,9 @@ function validateForEachStep(step, actionName, stepIndex) {
     );
   }
 
-  if (hasList && !Array.isArray(step.list)) {
+  if (hasList && !Array.isArray(step.list) && !isContextTemplateReference(step.list)) {
     throw new Error(
-      formatStepError(actionName, stepIndex, 'forEach "list" must be an array')
+      formatStepError(actionName, stepIndex, 'forEach "list" must be an array or a context/env template reference')
     );
   }
 

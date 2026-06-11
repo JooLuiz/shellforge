@@ -6,6 +6,7 @@ import {
   applyThemeToDocument,
   persistThemePreference,
   resolveThemePreference,
+  syncNativeWindowTheme,
 } from "../theme/theme";
 
 describe("theme", () => {
@@ -57,5 +58,31 @@ describe("theme", () => {
   it("persists theme preference to localStorage", () => {
     persistThemePreference("dark");
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+  });
+
+  it("returns light when system prefers light and no stored preference", () => {
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: false,
+      media: "(prefers-color-scheme: dark)",
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    });
+
+    expect(resolveThemePreference()).toBe("light");
+  });
+
+  it("syncs the native window theme when the preload bridge is available", () => {
+    window.api = {
+      theme: {
+        set: vi.fn(),
+      },
+    } as unknown as typeof window.api;
+
+    syncNativeWindowTheme("dark");
+    expect(window.api?.theme?.set).toHaveBeenCalledWith("dark");
   });
 });

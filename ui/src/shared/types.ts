@@ -2,6 +2,7 @@ export type { PredefinedCommandKey } from "./predefinedCommandsRegistry";
 import type { PredefinedCommandKey } from "./predefinedCommandsRegistry";
 export type { ThemeMode } from "./themeBridge";
 import type { ThemeMode } from "./themeBridge";
+import type { Locale } from "./i18n/types";
 
 export interface PredefinedCommandConfig {
   enabled: boolean;
@@ -138,5 +139,14 @@ export interface AppApi {
   };
   theme: {
     set: (theme: ThemeMode) => Promise<void>;
+  };
+  locale: {
+    sync: (locale: Locale) => Promise<void>;
+    get: () => Promise<Locale>;
+    onChanged: (callback: (locale: Locale) => void) => () => void;
+  };
+  app: {
+    onNewCustomAction: (callback: () => void) => () => void;
+    onNewScheduledTask: (callback: () => void) => () => void;
   };
 }

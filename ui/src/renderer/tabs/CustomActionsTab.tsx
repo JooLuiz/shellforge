@@ -1,12 +1,15 @@
 import { useEffect, useMemo } from "react";
 import type { AppConfig } from "../../shared/types";
+import { useAppCommandBridge } from "../context/AppCommandBridge";
+import { useTranslation } from "../i18n";
+import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { useDeleteConfirmModal } from "../hooks/useDeleteConfirmModal";
 import { ActionEditorModal } from "./custom-actions/components/ActionEditorModal";
 import { CustomActionsList } from "./custom-actions/components/CustomActionsList";
-import { DeleteActionModal } from "./custom-actions/components/DeleteActionModal";
 import { RunActionModal } from "./custom-actions/components/RunActionModal";
+import { ActionEditorProvider } from "./custom-actions/context/ActionEditorContext";
 import { useActionEditor } from "./custom-actions/hooks/useActionEditor";
 import { useActionRows } from "./custom-actions/hooks/useActionRows";
-import { useDeleteActionModal } from "./custom-actions/hooks/useDeleteActionModal";
 import { useRunActionModal } from "./custom-actions/hooks/useRunActionModal";
 import { filterCustomActionNames } from "./custom-actions/utils/customActionSearch";
 
@@ -14,33 +17,23 @@ interface Props {
   config: AppConfig;
   onSave: (nextConfig: AppConfig) => Promise<void>;
   searchQuery: string;
-  createRequestToken?: number;
-  onCreateRequestConsumed?: () => void;
 }
 
-export function CustomActionsTab({
-  config,
-  onSave,
-  searchQuery,
-  createRequestToken = 0,
-  onCreateRequestConsumed,
-}: Props): JSX.Element {
+export function CustomActionsTab({ config, onSave, searchQuery }: Props): JSX.Element {
+  const { t } = useTranslation();
+  const { registerCustomActionCreate } = useAppCommandBridge();
   const rows = useActionRows({ config, onSave });
   const editor = useActionEditor({ config, onSave });
   const runModal = useRunActionModal();
-  const deleteModal = useDeleteActionModal({ deleteAction: rows.deleteAction });
+  const deleteModal = useDeleteConfirmModal({ deleteItem: rows.deleteAction });
 
   useEffect(() => {
-    if (createRequestToken <= 0) {
-      return;
-    }
-    editor.openCreateEditor();
-    onCreateRequestConsumed?.();
-  }, [createRequestToken, onCreateRequestConsumed]);
+    return registerCustomActionCreate(editor.openCreateEditor);
+  }, [editor.openCreateEditor, registerCustomActionCreate]);
 
   const visibleActionNames = useMemo(
     () => filterCustomActionNames(rows.actionNames, config, searchQuery),
-    [rows.actionNames, config, searchQuery]
+    [rows.actionNames, config, searchQuery],
   );
 
   const configuredActionNames = useMemo(() => {
@@ -54,7 +47,7 @@ export function CustomActionsTab({
   return (
     <section className="dashed-section">
       {visibleActionNames.length === 0 ? (
-        <div className="info-banner">No custom actions match the current search.</div>
+        <div className="info-banner">{t.customActions.noSearchResults}</div>
       ) : null}
       <CustomActionsList
         actionNames={visibleActionNames}
@@ -78,42 +71,13 @@ export function CustomActionsTab({
       ) : null}
 
       {editor.editorMode && editor.editorDraft ? (
-        <ActionEditorModal
+        <ActionEditorProvider
           actionRunner={config.actionRunner}
-          addStepAtInsertionPoint={editor.addStepAtInsertionPoint}
-          changeSelectedStepAction={editor.changeSelectedStepAction}
-          closeEditorModal={editor.closeEditorModal}
           configuredActionNames={configuredActionNames}
-          contextVariables={editor.contextVariables}
-          deleteSelectedStep={editor.deleteSelectedStep}
-          draftFieldValidationState={editor.draftFieldValidationState}
-          editorDraft={editor.editorDraft}
-          editorMode={editor.editorMode}
-          editorSaveButtonLabel={editor.editorSaveButtonLabel}
-          editorSaveStatus={editor.editorSaveStatus}
-          edges={editor.edges}
-          enterBlockScope={editor.enterBlockScope}
-          fieldValidationByKey={editor.fieldValidationByKey}
-          flowBreadcrumbSegments={editor.flowBreadcrumbSegments}
-          flowContainerPath={editor.flowContainerPath}
-          flowValidationBannerItems={editor.flowValidationBannerItems}
-          hasBrowserSteps={editor.hasBrowserSteps}
-          isSavingEditor={editor.isSavingEditor}
-          jsonDraftByFieldId={editor.jsonDraftByFieldId}
-          jsonErrorByFieldId={editor.jsonErrorByFieldId}
-          nodes={editor.nodes}
-          persistEditorDraft={editor.persistEditorDraft}
-          selectedStep={editor.selectedStep}
-          selectedStepPath={editor.selectedStepPath}
-          selectedStepPathKey={editor.selectedStepPathKey}
-          setJsonDraftByFieldId={editor.setJsonDraftByFieldId}
-          setJsonErrorByFieldId={editor.setJsonErrorByFieldId}
-          setFlowContainerPath={editor.setFlowContainerPath}
-          setSelectedStepPath={editor.setSelectedStepPath}
-          updateActionName={editor.updateActionName}
-          updateBrowserProfile={editor.updateBrowserProfile}
-          updateSelectedStep={editor.updateSelectedStep}
-        />
+          editor={editor}
+        >
+          <ActionEditorModal />
+        </ActionEditorProvider>
       ) : null}
 
       {runModal.runActionName ? (
@@ -128,12 +92,14 @@ export function CustomActionsTab({
         />
       ) : null}
 
-      {deleteModal.deleteActionName ? (
-        <DeleteActionModal
-          actionName={deleteModal.deleteActionName}
+      {deleteModal.pendingDelete ? (
+        <DeleteConfirmModal
           closeDeleteModal={deleteModal.closeDeleteModal}
           confirmDelete={deleteModal.confirmDelete}
+          description="This permanently removes the action from your config. This cannot be undone."
+          entityLabel="action"
           isDeleting={deleteModal.isDeleting}
+          itemName={deleteModal.pendingDelete.label}
         />
       ) : null}
     </section>

@@ -1,4 +1,5 @@
 import type { ProfileIssue, ProfileStatus } from "../../shared/types";
+import { useTranslation } from "../i18n";
 
 interface ProfileHealthBannerProps {
   profileStatus: ProfileStatus;
@@ -21,6 +22,8 @@ export function ProfileHealthBanner({
   onRegenerate,
   onOpenFolder,
 }: ProfileHealthBannerProps): JSX.Element | null {
+  const { t } = useTranslation();
+
   if (profileStatus.isHealthy) {
     return null;
   }
@@ -29,19 +32,25 @@ export function ProfileHealthBanner({
 
   return (
     <div className="profile-health-banner warning-box" role="status">
-      <strong>PowerShell profile needs attention</strong>
+      <strong>{t.profileHealth.title}</strong>
       {profileStatus.profilePath ? (
         <p className="profile-health-banner-path">
-          Profile path: <code>{profileStatus.profilePath}</code>
+          {t.profileHealth.profilePathLabel}{" "}
+          <code>{profileStatus.profilePath}</code>
         </p>
       ) : null}
       <ul className="profile-health-banner-issues">
-        {profileStatus.issues.map((issue) => (
-          <li key={issue.code}>
-            <span>{issue.message}</span>
-            <span className="profile-health-banner-remediation">{issue.remediation}</span>
-          </li>
-        ))}
+        {profileStatus.issues.map((issue) => {
+          const translatedIssue = t.profileHealth.issues[issue.code];
+          return (
+            <li key={issue.code}>
+              <span>{translatedIssue?.message ?? issue.message}</span>
+              <span className="profile-health-banner-remediation">
+                {translatedIssue?.remediation ?? issue.remediation}
+              </span>
+            </li>
+          );
+        })}
       </ul>
       <div className="profile-health-banner-actions">
         {showRegenerateAction ? (
@@ -51,7 +60,7 @@ export function ProfileHealthBanner({
             disabled={isSaving}
             onClick={() => void onRegenerate()}
           >
-            Regenerate profile block
+            {t.profileHealth.regenerateProfileBlock}
           </button>
         ) : null}
         {profileStatus.profilePath ? (
@@ -60,7 +69,7 @@ export function ProfileHealthBanner({
             className="button button-blue"
             onClick={() => void onOpenFolder()}
           >
-            Open profile folder
+            {t.profileHealth.openProfileFolder}
           </button>
         ) : null}
       </div>

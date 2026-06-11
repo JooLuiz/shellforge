@@ -6,8 +6,8 @@ interface UseScheduledTaskActionsInput {
 }
 
 interface UseScheduledTaskActionsResult {
+  deleteScheduledTask: (fileName: string) => Promise<boolean>;
   togglingTaskNames: string[];
-  removeTask: (fileName: string) => Promise<void>;
   resetErrorMessage: () => void;
   toggleTask: (fileName: string, isEnabled: boolean) => Promise<void>;
 }
@@ -22,16 +22,20 @@ export function useScheduledTaskActions({
     setErrorMessage(null);
   }, [setErrorMessage]);
 
-  const removeTask = useCallback(
-    async (fileName: string): Promise<void> => {
-      const confirmed = window.confirm(`Delete scheduled task file "${fileName}"?`);
-      if (!confirmed) {
-        return;
+  const deleteScheduledTask = useCallback(
+    async (fileName: string): Promise<boolean> => {
+      setErrorMessage(null);
+      try {
+        await window.api.scheduledTasks.delete(fileName);
+        await refreshScheduledTasks();
+        return true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown delete error";
+        setErrorMessage(message);
+        return false;
       }
-      await window.api.scheduledTasks.delete(fileName);
-      await refreshScheduledTasks();
     },
-    [refreshScheduledTasks]
+    [refreshScheduledTasks, setErrorMessage]
   );
 
   const toggleTask = useCallback(
@@ -54,8 +58,8 @@ export function useScheduledTaskActions({
   );
 
   return {
+    deleteScheduledTask,
     togglingTaskNames,
-    removeTask,
     resetErrorMessage,
     toggleTask,
   };

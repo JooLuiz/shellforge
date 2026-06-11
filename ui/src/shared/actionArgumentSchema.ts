@@ -1,18 +1,13 @@
 import type { ActionConfig, ActionStep } from "./types";
+import {
+  forEachNestedStepArray,
+  isActionStep,
+} from "./stepTreeTraversal";
 
 export interface ActionArgumentSchema {
   required: string[];
   optional: string[];
   defaults: Record<string, string>;
-}
-
-const NESTED_STEP_KEYS = ["steps", "try", "catch", "finally", "then", "else"] as const;
-
-function isActionStep(value: unknown): value is ActionStep {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  return typeof (value as { action?: unknown }).action === "string";
 }
 
 function getActionSteps(actionConfig: ActionConfig): ActionStep[] {
@@ -56,12 +51,8 @@ function inspectStepsForArgumentSchema(steps: ActionStep[], schema: ActionArgume
       addDefaults(schema.defaults, step.defaults);
     }
 
-    NESTED_STEP_KEYS.forEach((nestedKey) => {
-      const nestedValue = step[nestedKey];
-      if (!Array.isArray(nestedValue)) {
-        return;
-      }
-      inspectStepsForArgumentSchema(nestedValue.filter(isActionStep), schema);
+    forEachNestedStepArray(step, (_nestedKey, nestedSteps) => {
+      inspectStepsForArgumentSchema(nestedSteps, schema);
     });
   });
 }

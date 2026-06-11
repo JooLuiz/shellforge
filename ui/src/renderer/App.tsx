@@ -4,49 +4,22 @@ import type {
   ProfileStatus,
   ScheduledTaskRecord,
 } from "../shared/types";
+import { AppFooter } from "./components/AppFooter";
+import { ProfileHealthBanner } from "./components/ProfileHealthBanner";
+import { TabHeaderSearch } from "./components/TabHeaderSearch";
+import { useAppCommandBridge } from "./context/AppCommandBridge";
+import { useTheme } from "./hooks/useTheme";
+import { useTranslation } from "./i18n";
+import { CustomActionsTab } from "./tabs/CustomActionsTab";
 import { PredefinedCommandsTab } from "./tabs/PredefinedCommandsTab";
 import { PredefinedCommandFilters } from "./tabs/predefined-commands/PredefinedCommandFilters";
 import type { PredefinedCommandFilterCategory } from "./tabs/predefined-commands/predefinedCommandFilterUtils";
 import { ScheduledTasksTab } from "./tabs/ScheduledTasksTab";
-import { CustomActionsTab } from "./tabs/CustomActionsTab";
 import { buildCliAvailableCommandOptions } from "./tabs/scheduled-tasks/utils";
 import shellForgeMark from "./assets/logo/shell-forge-mark.svg";
-import { AppFooter } from "./components/AppFooter";
-import { ProfileHealthBanner } from "./components/ProfileHealthBanner";
-import { TabHeaderSearch } from "./components/TabHeaderSearch";
-import { useTheme } from "./hooks/useTheme";
 
 type TabId = "predefined" | "custom" | "scheduled";
 type ScheduledTasksLoadStatus = "idle" | "loading" | "loaded" | "error";
-
-interface TabDefinition {
-  id: TabId;
-  label: string;
-  title: string;
-  description: string;
-}
-
-const TABS: TabDefinition[] = [
-  {
-    id: "predefined",
-    label: "Pre-defined Commands",
-    title: "Pre-defined Commands",
-    description:
-      "List of pre-defined commands to help guarantee a better experience when using Windows in CLI.",
-  },
-  {
-    id: "custom",
-    label: "Custom Actions",
-    title: "Custom Actions",
-    description: "List of configurable custom actions.",
-  },
-  {
-    id: "scheduled",
-    label: "Scheduled Tasks",
-    title: "Scheduled Tasks",
-    description: "List of tasks to be executed on pre-defined moments.",
-  },
-];
 
 function getApiOrThrow() {
   if (
@@ -55,30 +28,21 @@ function getApiOrThrow() {
     !window.api.profile ||
     !window.api.scheduledTasks
   ) {
-    throw new Error(
-      "Desktop bridge unavailable (window.api). Restart the app after rebuilding the UI.",
-    );
+    throw new Error("Desktop bridge unavailable");
   }
   return window.api;
 }
 
 export default function App(): JSX.Element {
+  const { t } = useTranslation();
+  const { requestCustomActionCreate, requestScheduledTaskCreate } = useAppCommandBridge();
   const [activeTab, setActiveTab] = useState<TabId>("predefined");
   const [config, setConfig] = useState<AppConfig | null>(null);
-  const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(
-    null,
-  );
-  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTaskRecord[]>(
-    [],
-  );
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null);
+  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTaskRecord[]>([]);
   const [scheduledTasksLoadStatus, setScheduledTasksLoadStatus] =
     useState<ScheduledTasksLoadStatus>("idle");
-  const [scheduledTasksLoadError, setScheduledTasksLoadError] = useState<
-    string | null
-  >(null);
-  const [customCreateRequestToken, setCustomCreateRequestToken] = useState(0);
-  const [scheduledCreateRequestToken, setScheduledCreateRequestToken] =
-    useState(0);
+  const [scheduledTasksLoadError, setScheduledTasksLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,9 +51,33 @@ export default function App(): JSX.Element {
     useState<PredefinedCommandFilterCategory>("all");
   const { setTheme, theme } = useTheme();
 
+  const tabDefinitions = useMemo(
+    () => [
+      {
+        id: "predefined" as const,
+        label: t.tabs.predefined,
+        title: t.tabs.predefinedTitle,
+        description: t.tabs.predefinedDescription,
+      },
+      {
+        id: "custom" as const,
+        label: t.tabs.custom,
+        title: t.tabs.customTitle,
+        description: t.tabs.customDescription,
+      },
+      {
+        id: "scheduled" as const,
+        label: t.tabs.scheduled,
+        title: t.tabs.scheduledTitle,
+        description: t.tabs.scheduledDescription,
+      },
+    ],
+    [t],
+  );
+
   const activeTabDefinition = useMemo(
-    () => TABS.find((tab) => tab.id === activeTab) ?? TABS[0],
-    [activeTab],
+    () => tabDefinitions.find((tab) => tab.id === activeTab) ?? tabDefinitions[0],
+    [activeTab, tabDefinitions],
   );
 
   const customActionCommandOptions = useMemo(() => {
@@ -112,7 +100,7 @@ export default function App(): JSX.Element {
       setProfileStatus(nextProfileStatus);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unknown load error";
+        error instanceof Error ? error.message : t.app.unknownLoadError;
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -141,7 +129,7 @@ export default function App(): JSX.Element {
       setProfileStatus(nextProfileStatus);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unknown save error";
+        error instanceof Error ? error.message : t.app.unknownSaveError;
       setErrorMessage(message);
       throw error;
     } finally {
@@ -161,12 +149,12 @@ export default function App(): JSX.Element {
       const message =
         error instanceof Error
           ? error.message
-          : "Unknown scheduled tasks load error";
+          : t.app.unknownScheduledTasksLoadError;
       setScheduledTasksLoadError(message);
       setScheduledTasksLoadStatus("error");
       throw error;
     }
-  }, []);
+  }, [t.app.unknownScheduledTasksLoadError]);
 
   useEffect(() => {
     if (activeTab !== "scheduled" || scheduledTasksLoadStatus !== "idle") {
@@ -185,31 +173,33 @@ export default function App(): JSX.Element {
 
   const tabSearchPlaceholder =
     activeTab === "predefined"
-      ? "Search predefined commands..."
+      ? t.app.searchPredefined
       : activeTab === "custom"
-        ? "Search custom actions..."
-        : "Search scheduled tasks...";
+        ? t.app.searchCustomActions
+        : t.app.searchScheduledTasks;
 
   const tabHeaderAction =
     activeTab === "custom" ? (
       <button
         type="button"
         className="button button-teal"
-        onClick={() =>
-          setCustomCreateRequestToken((previousToken) => previousToken + 1)
-        }
+        onClick={() => {
+          setActiveTab("custom");
+          requestCustomActionCreate();
+        }}
       >
-        New Action
+        {t.app.newAction}
       </button>
     ) : activeTab === "scheduled" ? (
       <button
         type="button"
         className="button button-teal"
-        onClick={() =>
-          setScheduledCreateRequestToken((previousToken) => previousToken + 1)
-        }
+        onClick={() => {
+          setActiveTab("scheduled");
+          requestScheduledTaskCreate();
+        }}
       >
-        New Schedule
+        {t.app.newSchedule}
       </button>
     ) : null;
 
@@ -224,11 +214,11 @@ export default function App(): JSX.Element {
               className="brand-mark"
             />
             <div className="brand-copy">
-              <h1 className="brand-heading">ShellForge</h1>
+              <h1 className="brand-heading">{t.app.brandTitle}</h1>
             </div>
           </div>
           <nav className="tab-row" aria-label="Main app sections">
-            {TABS.map((tab) => (
+            {tabDefinitions.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -269,15 +259,11 @@ export default function App(): JSX.Element {
         </section>
 
         <div className="tab-content-scroll">
-          {isLoading ? (
-            <div className="info-banner">Loading desktop manager...</div>
-          ) : null}
+          {isLoading ? <div className="info-banner">{t.app.loading}</div> : null}
           {!config && !isLoading ? (
-            <div className="error-banner">Failed to load config.</div>
+            <div className="error-banner">{t.app.failedToLoadConfig}</div>
           ) : null}
-          {errorMessage ? (
-            <div className="error-banner">{errorMessage}</div>
-          ) : null}
+          {errorMessage ? <div className="error-banner">{errorMessage}</div> : null}
 
           {profileStatus ? (
             <ProfileHealthBanner
@@ -291,7 +277,7 @@ export default function App(): JSX.Element {
                   await refreshProfileStatus();
                 } catch (error) {
                   const message =
-                    error instanceof Error ? error.message : "Unable to regenerate profile block.";
+                    error instanceof Error ? error.message : t.app.regenerateProfileFailed;
                   setErrorMessage(message);
                 }
               }}
@@ -317,8 +303,6 @@ export default function App(): JSX.Element {
                   config={config}
                   onSave={saveConfig}
                   searchQuery={tabSearchQuery}
-                  createRequestToken={customCreateRequestToken}
-                  onCreateRequestConsumed={() => setCustomCreateRequestToken(0)}
                 />
               ) : null}
               {activeTab === "scheduled" ? (
@@ -333,10 +317,6 @@ export default function App(): JSX.Element {
                   scheduledTasksLoadError={scheduledTasksLoadError}
                   commandOptions={customActionCommandOptions}
                   searchQuery={tabSearchQuery}
-                  createRequestToken={scheduledCreateRequestToken}
-                  onCreateRequestConsumed={() =>
-                    setScheduledCreateRequestToken(0)
-                  }
                 />
               ) : null}
             </main>
@@ -345,7 +325,7 @@ export default function App(): JSX.Element {
 
         <AppFooter setTheme={setTheme} theme={theme} />
       </div>
-      {isSaving ? <div className="saving-chip">Saving...</div> : null}
+      {isSaving ? <div className="saving-chip">{t.app.saving}</div> : null}
     </div>
   );
 }
