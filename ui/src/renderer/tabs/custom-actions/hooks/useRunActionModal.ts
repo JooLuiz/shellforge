@@ -3,6 +3,13 @@ import type { Dispatch, SetStateAction } from "react";
 import type { ActionConfig } from "../../../../shared/types";
 import { collectRequiredArgs } from "../utils/actionConfigUtils";
 
+export type RunActionFeedbackKind = "success" | "error";
+
+export interface RunActionFeedback {
+  kind: RunActionFeedbackKind;
+  message: string;
+}
+
 interface OpenRunModalInput {
   actionName: string;
   actionConfig?: ActionConfig;
@@ -10,7 +17,7 @@ interface OpenRunModalInput {
 
 interface UseRunActionModalResult {
   isRunningAction: boolean;
-  runActionMessage: string | null;
+  runActionFeedback: RunActionFeedback | null;
   runActionName: string | null;
   runArgsDraft: Record<string, string>;
   closeRunModal: () => void;
@@ -23,7 +30,7 @@ export function useRunActionModal(): UseRunActionModalResult {
   const [isRunningAction, setIsRunningAction] = useState(false);
   const [runActionName, setRunActionName] = useState<string | null>(null);
   const [runArgsDraft, setRunArgsDraft] = useState<Record<string, string>>({});
-  const [runActionMessage, setRunActionMessage] = useState<string | null>(null);
+  const [runActionFeedback, setRunActionFeedback] = useState<RunActionFeedback | null>(null);
 
   const openRunModal = ({ actionName, actionConfig }: OpenRunModalInput): void => {
     const requiredArgs = actionConfig ? collectRequiredArgs(actionConfig) : [];
@@ -33,13 +40,13 @@ export function useRunActionModal(): UseRunActionModalResult {
     );
     setRunActionName(actionName);
     setRunArgsDraft(initialArgs);
-    setRunActionMessage(null);
+    setRunActionFeedback(null);
   };
 
   const closeRunModal = (): void => {
     setRunActionName(null);
     setRunArgsDraft({});
-    setRunActionMessage(null);
+    setRunActionFeedback(null);
     setIsRunningAction(false);
   };
 
@@ -48,21 +55,26 @@ export function useRunActionModal(): UseRunActionModalResult {
       return;
     }
     setIsRunningAction(true);
-    setRunActionMessage(null);
+    setRunActionFeedback(null);
     try {
       const runResult = await window.api.customActions.run({
         actionName: runActionName,
         args: runArgsDraft,
       });
-      setRunActionMessage(
-        runResult.stdout.length > 0
-          ? `Action executed successfully.\n${runResult.stdout}`
-          : "Action executed successfully.",
-      );
+      setRunActionFeedback({
+        kind: "success",
+        message:
+          runResult.stdout.length > 0
+            ? `Action executed successfully.\n${runResult.stdout}`
+            : "Action executed successfully.",
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown execution error";
-      setRunActionMessage(`Execution failed.\n${message}`);
+      setRunActionFeedback({
+        kind: "error",
+        message: `Execution failed.\n${message}`,
+      });
     } finally {
       setIsRunningAction(false);
     }
@@ -70,7 +82,7 @@ export function useRunActionModal(): UseRunActionModalResult {
 
   return {
     isRunningAction,
-    runActionMessage,
+    runActionFeedback,
     runActionName,
     runArgsDraft,
     closeRunModal,

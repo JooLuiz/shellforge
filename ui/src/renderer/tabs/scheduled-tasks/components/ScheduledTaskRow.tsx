@@ -57,6 +57,20 @@ export function ScheduledTaskRow({
           <p className="list-row-subtitle scheduled-task-row-subtitle">
             Command: <strong>{task.command || "Not parsed"}</strong>
           </p>
+          {task.commandMetadata?.kind === "customActionAlias" ? (
+            <p className="status-text scheduled-task-row-metadata">
+              {[
+                task.commandMetadata.verbose ? "Verbose" : null,
+                task.commandMetadata.actionArgs
+                  ? Object.entries(task.commandMetadata.actionArgs)
+                      .map(([argName, argValue]) => `${argName}=${argValue}`)
+                      .join(", ")
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          ) : null}
           {task.parseError ? (
             <div className="error-banner">{task.parseError}</div>
           ) : null}

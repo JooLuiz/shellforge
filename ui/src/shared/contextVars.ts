@@ -1,11 +1,28 @@
-import type { ActionStep, ContextValidationWarning } from "./types";
+import type { ActionStep, ContextValidationWarning, StepPath } from "./types";
+import { inferContextVariablesBeforeStep } from "./contextVarInference";
+
+export { inferContextVariablesBeforeStep } from "./contextVarInference";
 
 const CONTEXT_PLACEHOLDER_REGEX = /\{\{\s*context\.([a-zA-Z0-9_.-]+)\s*\}\}/g;
 
-function flattenStringFields(
+const NESTED_STEP_ARRAY_KEYS = new Set([
+  "steps",
+  "try",
+  "catch",
+  "finally",
+  "then",
+  "else",
+]);
+
+interface StepWithPath {
+  step: ActionStep;
+  path: StepPath;
+}
+
+function flattenStepStringFields(
   input: unknown,
   basePath: string,
-  collector: Array<{ path: string; value: string }>
+  collector: Array<{ path: string; value: string }>,
 ): void {
   if (typeof input === "string") {
     collector.push({ path: basePath, value: input });
@@ -14,7 +31,7 @@ function flattenStringFields(
 
   if (Array.isArray(input)) {
     input.forEach((entry, index) => {
-      flattenStringFields(entry, `${basePath}[${index}]`, collector);
+      flattenStepStringFields(entry, `${basePath}[${index}]`, collector);
     });
     return;
   }
@@ -24,9 +41,41 @@ function flattenStringFields(
   }
 
   Object.entries(input as Record<string, unknown>).forEach(([key, value]) => {
+    if (NESTED_STEP_ARRAY_KEYS.has(key)) {
+      return;
+    }
+
     const nextPath = basePath.length > 0 ? `${basePath}.${key}` : key;
-    flattenStringFields(value, nextPath, collector);
+    flattenStepStringFields(value, nextPath, collector);
   });
+}
+
+function collectStepsWithPaths(
+  steps: ActionStep[],
+  parentPath: StepPath,
+  arrayKey: string,
+): StepWithPath[] {
+  const collected: StepWithPath[] = [];
+
+  steps.forEach((step, stepIndex) => {
+    const currentPath: StepPath = [...parentPath, { arrayKey, stepIndex }];
+    collected.push({ step, path: currentPath });
+
+    NESTED_STEP_ARRAY_KEYS.forEach((nestedKey) => {
+      const nestedValue = step[nestedKey];
+      if (!Array.isArray(nestedValue)) {
+        return;
+      }
+
+      const nestedSteps = nestedValue.filter(
+        (entry): entry is ActionStep =>
+          typeof entry === "object" && entry !== null && typeof entry.action === "string",
+      );
+      collected.push(...collectStepsWithPaths(nestedSteps, currentPath, nestedKey));
+    });
+  });
+
+  return collected;
 }
 
 function collectVariablesProducedByStep(step: ActionStep): string[] {
@@ -36,12 +85,9 @@ function collectVariablesProducedByStep(step: ActionStep): string[] {
     producedVariables.push(step.storeAs.trim());
   }
 
-  if (
-    step.action === "extractVariable" &&
-    typeof step.storeAs === "string" &&
-    step.storeAs.trim().length > 0
-  ) {
-    producedVariables.push(step.storeAs.trim());
+  if (step.action === "forEach" || step.action === "forEachElement") {
+    producedVariables.push("item");
+    producedVariables.push("index");
   }
 
   if (step.action === "getArguments") {
@@ -59,7 +105,7 @@ function collectVariablesProducedByStep(step: ActionStep): string[] {
 
     if (step.defaults && typeof step.defaults === "object") {
       Object.keys(step.defaults as Record<string, unknown>).forEach((entry) =>
-        producedVariables.push(entry)
+        producedVariables.push(entry),
       );
     }
   }
@@ -67,14 +113,15 @@ function collectVariablesProducedByStep(step: ActionStep): string[] {
   return Array.from(new Set(producedVariables));
 }
 
-function collectWarningsForStep(
+function collectWarningsForStepAtPath(
   step: ActionStep,
-  stepIndex: number,
-  availableVariables: Set<string>
+  stepPath: StepPath,
+  rootSteps: ActionStep[],
 ): ContextValidationWarning[] {
+  const availableVariables = new Set(inferContextVariablesBeforeStep(rootSteps, stepPath));
   const warnings: ContextValidationWarning[] = [];
   const stringFields: Array<{ path: string; value: string }> = [];
-  flattenStringFields(step, "", stringFields);
+  flattenStepStringFields(step, "", stringFields);
 
   stringFields.forEach((entry) => {
     const matches = entry.value.matchAll(CONTEXT_PLACEHOLDER_REGEX);
@@ -83,7 +130,7 @@ function collectWarningsForStep(
       const rootVariable = referencedVariable.split(".")[0];
       if (!availableVariables.has(rootVariable)) {
         warnings.push({
-          stepIndex,
+          stepPath,
           fieldPath: entry.path,
           variableName: rootVariable,
         });
@@ -97,7 +144,7 @@ function collectWarningsForStep(
 export function inferContextVariables(steps: ActionStep[]): string[] {
   const availableVariables = new Set<string>();
 
-  steps.forEach((step) => {
+  collectStepsWithPaths(steps, [], "steps").forEach(({ step }) => {
     collectVariablesProducedByStep(step).forEach((variableName) => {
       availableVariables.add(variableName);
     });
@@ -107,16 +154,11 @@ export function inferContextVariables(steps: ActionStep[]): string[] {
 }
 
 export function validateContextReferences(steps: ActionStep[]): ContextValidationWarning[] {
-  const availableVariables = new Set<string>();
   const warnings: ContextValidationWarning[] = [];
 
-  steps.forEach((step, index) => {
-    collectWarningsForStep(step, index, availableVariables).forEach((warning) => {
+  collectStepsWithPaths(steps, [], "steps").forEach(({ step, path }) => {
+    collectWarningsForStepAtPath(step, path, steps).forEach((warning) => {
       warnings.push(warning);
-    });
-
-    collectVariablesProducedByStep(step).forEach((variableName) => {
-      availableVariables.add(variableName);
     });
   });
 

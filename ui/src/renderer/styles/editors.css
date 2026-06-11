@@ -13,23 +13,39 @@
   align-items: center;
 }
 
+.list-editor-row .interpolated-string-field,
+.object-editor-row .interpolated-string-field {
+  width: 100%;
+  min-width: 0;
+}
+
 .object-editor-row {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) auto;
 }
 
+.object-editor-row--required {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+}
+
+.object-editor-key--locked {
+  background: var(--color-bg-locked);
+  color: var(--color-text-locked);
+  cursor: not-allowed;
+}
+
 .json-field-error {
-  color: #9c1d31;
+  color: var(--color-text-error);
   font-size: 14px;
   font-weight: 600;
 }
 
 .label-caption {
-  color: #5e7085;
+  color: var(--color-text-status);
   font-size: 22px;
   font-weight: 600;
 }
 
 .status-text {
   font-size: 20px;
-  color: #5c6f84;
+  color: var(--color-text-status);
 }

@@ -3,9 +3,12 @@ export const IPC_CHANNELS = {
   configWrite: "config:write",
   profileStatus: "profile:status",
   profileRegenerate: "profile:regenerate",
+  profileOpenFolder: "profile:openFolder",
   scheduledTasksList: "scheduledTasks:list",
   scheduledTasksSave: "scheduledTasks:save",
   scheduledTasksDelete: "scheduledTasks:delete",
   scheduledTasksToggle: "scheduledTasks:toggle",
   customActionsRun: "customActions:run",
+  browserProfilesList: "browserProfiles:list",
+  themeSet: "theme:set",
 } as const;

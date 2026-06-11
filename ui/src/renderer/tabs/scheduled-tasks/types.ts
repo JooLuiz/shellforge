@@ -1,9 +1,14 @@
-import type { ScheduledTaskInput, ScheduledTaskRecord } from "../../../shared/types";
+import type { ActionConfig, CustomActionUiConfig, ScheduledTaskRecord } from "../../../shared/types";
 
 export interface ScheduledTasksTabProps {
+  actionRunner: Record<string, ActionConfig>;
+  customActions: Record<string, CustomActionUiConfig>;
   scheduledTasks: ScheduledTaskRecord[];
   refreshScheduledTasks: () => Promise<void>;
+  isLoadingScheduledTasks: boolean;
+  scheduledTasksLoadError: string | null;
   commandOptions: string[];
+  searchQuery: string;
   createRequestToken?: number;
   onCreateRequestConsumed?: () => void;
 }
@@ -15,7 +20,6 @@ export interface ScheduledTaskEditorState {
   modalMode: ModalMode;
   isSaving: boolean;
   draft: ScheduledTaskInput;
-  triggerTimesInput: string;
   errorMessage: string | null;
   editSaveStatus: EditSaveStatus;
   saveButtonLabel: string;

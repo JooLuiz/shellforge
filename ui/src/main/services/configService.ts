@@ -16,8 +16,8 @@ function loadNormalizeStepsValidator(): NormalizeStepsFunction {
     return normalizeSteps;
   }
 
-  const { repoRoot } = getRepoPaths();
-  const normalizeStepsPath = path.join(repoRoot, "action-runner", "normalizeSteps.js");
+  const { runtimeRoot } = getRepoPaths();
+  const normalizeStepsPath = path.join(runtimeRoot, "commands", "action-runner", "normalizeSteps.js");
   const normalizeStepsModule = require(normalizeStepsPath) as {
     normalizeSteps: NormalizeStepsFunction;
   };

@@ -1,7 +1,7 @@
 :root {
   font-family: Inter, "Segoe UI", Arial, sans-serif;
-  color: #2f3c4d;
-  background: #e7eaef;
+  color: var(--color-text-primary);
+  background: var(--color-bg-app);
 }
 
 * {
@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  background: #e7eaef;
+  background: var(--color-bg-app);
 }
 
 button,

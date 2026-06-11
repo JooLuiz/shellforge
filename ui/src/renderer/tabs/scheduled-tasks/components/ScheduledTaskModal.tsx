@@ -1,9 +1,16 @@
 import type { ScheduledTaskInput } from "../../../../shared/types";
-import { CUSTOM_COMMAND_VALUE, WEEKDAYS } from "../constants";
+import { ModalCloseButton } from "../../../components/ModalCloseButton";
+import { useModalDismiss } from "../../../hooks/useModalDismiss";
+import type { ActionArgumentSchema } from "../../../../shared/actionArgumentSchema";
+import type { ScheduledCommandDraft } from "../../../../shared/scheduledTaskCommand";
+import { WEEKDAYS } from "../constants";
 import type { EditSaveStatus, ModalMode } from "../types";
-import { getCommandSelectValue } from "../utils";
+import { ScheduledTaskCommandSection } from "./ScheduledTaskCommandSection";
+import { ScheduledTaskTriggerTimesField } from "./ScheduledTaskTriggerTimesField";
 
 interface ScheduledTaskModalProps {
+  argumentSchema: ActionArgumentSchema | null;
+  commandDraft: ScheduledCommandDraft;
   commandOptions: string[];
   draft: ScheduledTaskInput;
   editSaveStatus: EditSaveStatus;
@@ -12,13 +19,16 @@ interface ScheduledTaskModalProps {
   modalMode: Exclude<ModalMode, null>;
   onClose: () => void;
   onPersist: () => Promise<void>;
+  onUpdateCommandDraft: (
+    updater: (previousDraft: ScheduledCommandDraft) => ScheduledCommandDraft,
+  ) => void;
   onUpdateDraft: (updater: (previousDraft: ScheduledTaskInput) => ScheduledTaskInput) => void;
-  onUpdateTriggerTimesInput: (nextValue: string) => void;
   saveButtonLabel: string;
-  triggerTimesInput: string;
 }
 
 export function ScheduledTaskModal({
+  argumentSchema,
+  commandDraft,
   commandOptions,
   draft,
   editSaveStatus,
@@ -27,21 +37,18 @@ export function ScheduledTaskModal({
   modalMode,
   onClose,
   onPersist,
+  onUpdateCommandDraft,
   onUpdateDraft,
-  onUpdateTriggerTimesInput,
   saveButtonLabel,
-  triggerTimesInput,
 }: ScheduledTaskModalProps): JSX.Element {
-  const commandSelectValue = getCommandSelectValue(draft.command, commandOptions);
+  const { backdropProps, panelProps } = useModalDismiss(onClose);
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className="modal-backdrop" {...backdropProps}>
+      <div className="modal" {...panelProps}>
         <header className="modal-header">
           <h3>{modalMode === "edit" ? "Edit Scheduled Task" : "Create Scheduled Task"}</h3>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Close modal">
-            X
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </header>
         <div className="modal-body">
           <div className="scheduled-modal-grid">
@@ -58,56 +65,21 @@ export function ScheduledTaskModal({
                   }
                 />
               </label>
-              <label className="field-block">
-                Command
-                <select
-                  value={commandSelectValue}
-                  onChange={(event) => {
-                    const selectedCommand = event.target.value;
-                    if (selectedCommand === CUSTOM_COMMAND_VALUE) {
-                      onUpdateDraft((previousDraft) => ({
-                        ...previousDraft,
-                        command: commandOptions.includes(previousDraft.command)
-                          ? ""
-                          : previousDraft.command,
-                      }));
-                      return;
-                    }
-                    onUpdateDraft((previousDraft) => ({
-                      ...previousDraft,
-                      command: selectedCommand,
-                    }));
-                  }}
-                >
-                  {commandOptions.map((commandOption) => (
-                    <option key={commandOption} value={commandOption}>
-                      {commandOption}
-                    </option>
-                  ))}
-                  <option value={CUSTOM_COMMAND_VALUE}>Custom command</option>
-                </select>
-              </label>
-              {commandSelectValue === CUSTOM_COMMAND_VALUE ? (
-                <label className="field-block">
-                  Custom command
-                  <input
-                    value={draft.command}
-                    onChange={(event) =>
-                      onUpdateDraft((previousDraft) => ({
-                        ...previousDraft,
-                        command: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              ) : null}
-              <label className="field-block">
-                Hours (HH:mm, comma-separated)
-                <input
-                  value={triggerTimesInput}
-                  onChange={(event) => onUpdateTriggerTimesInput(event.target.value)}
-                />
-              </label>
+              <ScheduledTaskCommandSection
+                argumentSchema={argumentSchema}
+                commandDraft={commandDraft}
+                commandOptions={commandOptions}
+                onChange={(nextCommandDraft) => onUpdateCommandDraft(() => nextCommandDraft)}
+              />
+              <ScheduledTaskTriggerTimesField
+                triggerTimes={draft.triggerTimes}
+                onChange={(nextTimes) =>
+                  onUpdateDraft((previousDraft) => ({
+                    ...previousDraft,
+                    triggerTimes: nextTimes,
+                  }))
+                }
+              />
             </div>
             <div className="scheduled-modal-right">
               <div className="field-block">

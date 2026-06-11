@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { ThemeMode } from "../shared/themeBridge";
 import type { AppApi, AppConfig, RunCustomActionInput, ScheduledTaskInput } from "../shared/types";
 import { IPC_CHANNELS } from "../main/ipc/channels";
 
@@ -10,6 +11,7 @@ const api: AppApi = {
   profile: {
     status: async () => ipcRenderer.invoke(IPC_CHANNELS.profileStatus),
     regenerate: async () => ipcRenderer.invoke(IPC_CHANNELS.profileRegenerate),
+    openFolder: async () => ipcRenderer.invoke(IPC_CHANNELS.profileOpenFolder),
   },
   scheduledTasks: {
     list: async () => ipcRenderer.invoke(IPC_CHANNELS.scheduledTasksList),
@@ -22,6 +24,12 @@ const api: AppApi = {
   },
   customActions: {
     run: async (input: RunCustomActionInput) => ipcRenderer.invoke(IPC_CHANNELS.customActionsRun, input),
+  },
+  browserProfiles: {
+    list: async () => ipcRenderer.invoke(IPC_CHANNELS.browserProfilesList),
+  },
+  theme: {
+    set: async (theme: ThemeMode) => ipcRenderer.invoke(IPC_CHANNELS.themeSet, theme),
   },
 };
 

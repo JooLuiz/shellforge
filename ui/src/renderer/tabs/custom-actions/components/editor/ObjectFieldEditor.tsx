@@ -1,17 +1,29 @@
 import type { ActionStep } from "../../../../../shared/types";
 import type { StepUpdater } from "../../types";
+import type { FlowValidationSeverity } from "../../utils/flowValidationUtils";
+import { getFieldBlockClassName } from "../../utils/flowValidationUtils";
 import { isRecord, parseLooseValue } from "../../utils/stepUtils";
+import { FieldHint } from "./FieldHint";
+import { InterpolatedStringField } from "./InterpolatedStringField";
 
 interface ObjectFieldEditorProps {
+  availableVariables: readonly string[];
   fieldKey: string;
+  hint?: string;
+  example?: string;
   label: string;
+  validationSeverity?: FlowValidationSeverity;
   value: unknown;
   updateSelectedStep: (updater: StepUpdater) => void;
 }
 
 export function ObjectFieldEditor({
+  availableVariables,
   fieldKey,
+  hint,
+  example,
   label,
+  validationSeverity,
   value,
   updateSelectedStep,
 }: ObjectFieldEditorProps): JSX.Element {
@@ -22,8 +34,9 @@ export function ObjectFieldEditor({
     isRecord(stepDraft[fieldKey]) ? stepDraft[fieldKey] : {};
 
   return (
-    <div className="field-block">
+    <div className={getFieldBlockClassName("field-block", validationSeverity)}>
       <span>{label}</span>
+      <FieldHint hint={hint} example={example} />
       <div className="object-editor">
         {objectEntries.map(([entryKey, entryValue], entryIndex) => (
           <div key={`${fieldKey}-${entryIndex}`} className="object-editor-row">
@@ -45,26 +58,45 @@ export function ObjectFieldEditor({
                 })
               }
             />
-            <input
-              value={
-                typeof entryValue === "string" ? entryValue : JSON.stringify(entryValue)
-              }
-              placeholder="value"
-              onChange={(event) =>
-                updateSelectedStep((stepDraft) => {
-                  const previousEntries = Object.entries(getObjectFromDraft(stepDraft));
-                  const nextObject: Record<string, unknown> = {};
-                  previousEntries.forEach(([rawKey, rawValue], index) => {
-                    if (index === entryIndex) {
-                      nextObject[rawKey] = parseLooseValue(event.target.value);
-                      return;
-                    }
-                    nextObject[rawKey] = rawValue;
-                  });
-                  return { ...stepDraft, [fieldKey]: nextObject };
-                })
-              }
-            />
+            {typeof entryValue === "string" ? (
+              <InterpolatedStringField
+                value={entryValue}
+                availableVariables={availableVariables}
+                onChange={(nextValue) =>
+                  updateSelectedStep((stepDraft) => {
+                    const previousEntries = Object.entries(getObjectFromDraft(stepDraft));
+                    const nextObject: Record<string, unknown> = {};
+                    previousEntries.forEach(([rawKey, rawValue], index) => {
+                      if (index === entryIndex) {
+                        nextObject[rawKey] = nextValue;
+                        return;
+                      }
+                      nextObject[rawKey] = rawValue;
+                    });
+                    return { ...stepDraft, [fieldKey]: nextObject };
+                  })
+                }
+              />
+            ) : (
+              <input
+                value={JSON.stringify(entryValue)}
+                placeholder="value"
+                onChange={(event) =>
+                  updateSelectedStep((stepDraft) => {
+                    const previousEntries = Object.entries(getObjectFromDraft(stepDraft));
+                    const nextObject: Record<string, unknown> = {};
+                    previousEntries.forEach(([rawKey, rawValue], index) => {
+                      if (index === entryIndex) {
+                        nextObject[rawKey] = parseLooseValue(event.target.value);
+                        return;
+                      }
+                      nextObject[rawKey] = rawValue;
+                    });
+                    return { ...stepDraft, [fieldKey]: nextObject };
+                  })
+                }
+              />
+            )}
             <button
               type="button"
               className="button button-red"

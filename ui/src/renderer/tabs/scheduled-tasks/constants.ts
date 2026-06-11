@@ -27,5 +27,4 @@ export const EMPTY_FORM: ScheduledTaskInput = {
   command: "",
 };
 
-export const CUSTOM_COMMAND_VALUE = "__custom__";
 export const EDIT_AUTOSAVE_DELAY_MS = 10000;

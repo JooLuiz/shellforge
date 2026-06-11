@@ -1,4 +1,5 @@
 import type { ScheduledTaskInput } from "../../shared/types";
+import { serializeScheduledCommandMetadata } from "../../shared/scheduledTaskCommand";
 
 function mapWeekday(weekday: string): string {
   const normalizedDay = weekday.trim().toLowerCase();
@@ -35,9 +36,13 @@ export function generateScheduledTaskScript(input: ScheduledTaskInput): string {
     .join(",\r\n");
   const descriptionTimes = input.triggerTimes.join(", ");
   const descriptionWeekdays = input.weekdays.map((weekday) => mapWeekday(weekday)).join(", ");
+  const metadataLine = input.commandMetadata
+    ? serializeScheduledCommandMetadata(input.commandMetadata)
+    : null;
 
   return [
-    "# managed by windows-custom-commands UI",
+    "# managed by ShellForge UI",
+    ...(metadataLine ? [metadataLine] : []),
     "param(",
     "    [switch]$Remove",
     ")",

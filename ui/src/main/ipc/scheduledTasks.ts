@@ -9,12 +9,12 @@ import {
 } from "../services/scheduledTasksService";
 
 export function registerScheduledTasksIpcHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.scheduledTasksList, () => {
-    return listScheduledTasks();
+  ipcMain.handle(IPC_CHANNELS.scheduledTasksList, async () => {
+    return await listScheduledTasks();
   });
 
-  ipcMain.handle(IPC_CHANNELS.scheduledTasksSave, (_event, input: ScheduledTaskInput) => {
-    return saveScheduledTask(input);
+  ipcMain.handle(IPC_CHANNELS.scheduledTasksSave, async (_event, input: ScheduledTaskInput) => {
+    return await saveScheduledTask(input);
   });
 
   ipcMain.handle(IPC_CHANNELS.scheduledTasksDelete, (_event, fileName: string) => {

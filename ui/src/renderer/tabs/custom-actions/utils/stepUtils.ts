@@ -31,11 +31,15 @@ export function createEmptyStep(actionType: string): ActionStep {
       return { ...baseStep, selector: "" };
     case "wait":
       return { ...baseStep, ms: 1000 };
+    case "waitForPageState":
+      return { ...baseStep, selector: "" };
     case "forEachElement":
       return { ...baseStep, selector: "", steps: [] };
+    case "forEach":
+      return { ...baseStep, list: [], steps: [] };
     case "apiRequest":
       return { ...baseStep, method: "GET", url: "" };
-    case "extractVariable":
+    case "setVariable":
       return { ...baseStep, source: "", storeAs: "" };
     case "shell":
       return { ...baseStep, command: "" };
@@ -45,11 +49,51 @@ export function createEmptyStep(actionType: string): ActionStep {
       return { ...baseStep, name: "" };
     case "tryCatch":
       return { ...baseStep, try: [] };
+    case "ifElse":
+      return { ...baseStep, left: "", operator: "eq", right: "", then: [], else: [] };
     case "writeFile":
       return { ...baseStep, path: "", content: "" };
     default:
       return baseStep;
   }
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasConfiguredStorageObject(value: unknown): boolean {
+  return isRecord(value) && Object.keys(value).length > 0;
+}
+
+function hasConfiguredCookies(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0;
+}
+
+export function formatSetWebStorageSummary(step: ActionStep): string {
+  const storageTargets: string[] = [];
+
+  if (hasConfiguredStorageObject(step.localStorage)) {
+    storageTargets.push("localStorage");
+  }
+  if (hasConfiguredStorageObject(step.sessionStorage)) {
+    storageTargets.push("sessionStorage");
+  }
+  if (hasConfiguredCookies(step.cookies)) {
+    storageTargets.push("cookies");
+  }
+
+  if (storageTargets.length === 0) {
+    return "";
+  }
+  if (storageTargets.length === 1) {
+    return storageTargets[0];
+  }
+  if (storageTargets.length === 2) {
+    return `${storageTargets[0]} and ${storageTargets[1]}`;
+  }
+
+  return `${storageTargets.slice(0, -1).join(", ")} and ${storageTargets[storageTargets.length - 1]}`;
 }
 
 export function summarizeStep(step: ActionStep): string {
@@ -61,21 +105,41 @@ export function summarizeStep(step: ActionStep): string {
     case "click":
       return `selector: ${String(step.selector ?? "")}`;
     case "wait":
-      return `wait: ${String(step.ms ?? step.selector ?? step.urlContains ?? "")}`;
+      return `${String(step.ms ?? "")}ms`;
+    case "waitForPageState":
+      if (typeof step.selector === "string" && step.selector.length > 0) {
+        return `selector: ${step.selector}`;
+      }
+      if (typeof step.urlContains === "string" && step.urlContains.length > 0) {
+        return `urlContains: ${step.urlContains}`;
+      }
+      if (step.waitForLoading === true) {
+        return "loading overlay";
+      }
+      return "page state";
     case "apiRequest":
       return `${String(step.method ?? "GET")} ${String(step.url ?? "")}`;
     case "shell":
       return String(step.command ?? "");
-    case "extractVariable":
+    case "setVariable":
       return `${String(step.source ?? "")} -> ${String(step.storeAs ?? "")}`;
+    case "closeBrowser":
     case "getArguments":
-      return `required: ${Array.isArray(step.required) ? step.required.length : 0}`;
+      return "";
+    case "setWebStorage":
+      return formatSetWebStorageSummary(step);
     case "invokeAction":
-      return `name: ${String(step.name ?? "")}`;
+      return `action: ${String(step.name ?? "")}`;
     case "forEachElement":
       return `selector: ${String(step.selector ?? "")}`;
+    case "forEach":
+      return Array.isArray(step.list)
+        ? `list: ${step.list.length} item(s)`
+        : `count: ${String(step.count ?? "")}`;
     case "tryCatch":
       return "try/catch block";
+    case "ifElse":
+      return `${String(step.operator ?? "eq")}: ${String(step.left ?? "")}`;
     case "writeFile":
       return `path: ${String(step.path ?? "")}`;
     default:
@@ -89,7 +153,7 @@ export function updateStepValue(
   fieldType: FieldType,
   rawValue: string,
 ): ActionStep {
-  if (fieldType === "string") {
+  if (fieldType === "string" || fieldType === "select") {
     return { ...step, [key]: rawValue };
   }
 
@@ -131,10 +195,6 @@ export function updateStepValue(
   } catch {
     return step;
   }
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function parseLooseValue(rawValue: string): unknown {

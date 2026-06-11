@@ -131,6 +131,12 @@ dist
 
 # ignoring configs
 config/config.json
+config/*.backup.json
+.shellforge-browser-profiles/
+
+# Desktop packaging artifacts
+ui/runtime-bundle/
+ui/dist/
 
 # Scheduled tasks - ignore everything except the example file
 scheduled-tasks/*

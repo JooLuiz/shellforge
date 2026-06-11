@@ -1,36 +1,27 @@
-import type { AppConfig, PredefinedCommandKey } from "../../shared/types";
+import type { AppConfig } from "../../shared/types";
+import {
+  PREDEFINED_COMMAND_KEYS,
+  type PredefinedCommandKey,
+} from "../../shared/predefinedCommandsRegistry";
 
-export const PROFILE_BLOCK_BEGIN = "# === windows-custom-commands:BEGIN (managed - do not edit) ===";
-export const PROFILE_BLOCK_END = "# === windows-custom-commands:END ===";
+export const PROFILE_BLOCK_BEGIN = "# === shellforge:BEGIN (managed - do not edit) ===";
+export const PROFILE_BLOCK_END = "# === shellforge:END ===";
 
-export interface CommandExecutablePaths {
-  reinitialize: string;
-  touch: string;
-  "action-runner": string;
-}
+export type CommandExecutablePaths = Record<PredefinedCommandKey, string>;
 
 function quotePathForPowershell(pathValue: string): string {
   return pathValue.replace(/'/g, "''");
 }
 
 function toPowerShellFunction(actionName: string, functionAlias: string, actionRunnerAlias: string): string {
+  const escapedActionName = actionName.replace(/'/g, "''");
   return [
     `Function ${functionAlias} {`,
     "    param (",
     "        [string[]]$ExtraArgs",
     "    )",
-    `    $actionRunnerCommand = "${actionRunnerAlias}"`,
-    `    $actionRunnerCommand += " --action=${actionName}"`,
-    "    foreach ($arg in $ExtraArgs) {",
-    "        if ($arg.StartsWith(\"--\")) {",
-    "            $actionRunnerCommand += \" $arg\"",
-    "        } elseif ($arg.StartsWith(\"-\")) {",
-    "            $actionRunnerCommand += \" $arg\"",
-    "        } else {",
-    "            $actionRunnerCommand += \" '$arg'\"",
-    "        }",
-    "    }",
-    "    Invoke-Expression $actionRunnerCommand",
+    `    $runnerArgs = @('--action=${escapedActionName}') + $ExtraArgs`,
+    `    & ${actionRunnerAlias} @runnerArgs`,
     "}",
   ].join("\r\n");
 }
@@ -53,10 +44,9 @@ export function buildProfileBlock(
   config: AppConfig,
   commandExecutablePaths: CommandExecutablePaths
 ): string {
-  const commandKeys: PredefinedCommandKey[] = ["reinitialize", "touch", "action-runner"];
   const blockLines: string[] = [PROFILE_BLOCK_BEGIN];
 
-  commandKeys.forEach((commandKey) => {
+  PREDEFINED_COMMAND_KEYS.forEach((commandKey) => {
     const commandConfig = config.ui.predefinedCommands[commandKey];
     if (!commandConfig.enabled) {
       return;
@@ -64,7 +54,7 @@ export function buildProfileBlock(
 
     const commandPath = commandExecutablePaths[commandKey];
     blockLines.push(
-      `New-Alias -Name ${commandConfig.alias} -Value '${quotePathForPowershell(commandPath)}'`
+      `Set-Alias -Name ${commandConfig.alias} -Value '${quotePathForPowershell(commandPath)}' -Force -Scope Global`
     );
   });
 
@@ -84,7 +74,7 @@ export function buildProfileBlock(
       blockLines.push(toPowerShellFunction(actionName, primaryAlias, actionRunnerAlias));
 
       secondaryAliases.forEach((aliasName) => {
-        blockLines.push(`Set-Alias -Name ${aliasName} -Value ${primaryAlias}`);
+        blockLines.push(`Set-Alias -Name ${aliasName} -Value ${primaryAlias} -Force -Scope Global`);
       });
     });
   }

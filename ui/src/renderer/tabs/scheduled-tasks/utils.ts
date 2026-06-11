@@ -1,14 +1,14 @@
-import type { ScheduledTaskInput } from "../../../shared/types";
-import { CUSTOM_COMMAND_VALUE, WEEKDAY_SHORT_LABELS } from "./constants";
+import type { AppConfig, ScheduledTaskInput } from "../../../shared/types";
+import { WEEKDAY_SHORT_LABELS } from "./constants";
 import type { EditSaveStatus, ModalMode } from "./types";
 
-export function serializeTaskDraft(
-  draft: ScheduledTaskInput,
-  triggerTimesInput: string
-): string {
+export function serializeTaskDraft(draft: ScheduledTaskInput): string {
   return JSON.stringify({
     ...draft,
-    triggerTimesInput: triggerTimesInput.trim(),
+    commandMetadata: draft.commandMetadata ?? null,
+    triggerTimes: [...draft.triggerTimes].sort((leftTime, rightTime) =>
+      leftTime.localeCompare(rightTime),
+    ),
   });
 }
 
@@ -24,11 +24,14 @@ export function normalizeCommandOptions(commandOptions: string[]): string[] {
   ).sort((leftOption, rightOption) => leftOption.localeCompare(rightOption));
 }
 
-export function parseTriggerTimes(triggerTimesInput: string): string[] {
-  return triggerTimesInput
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+export function buildCliAvailableCommandOptions(
+  customActions: AppConfig["ui"]["customActions"],
+): string[] {
+  return normalizeCommandOptions(
+    Object.entries(customActions)
+      .filter(([, customAction]) => customAction.availableOnCLI)
+      .map(([actionName, customAction]) => customAction.aliases[0] ?? actionName),
+  );
 }
 
 export function getSaveButtonLabel(
@@ -46,11 +49,4 @@ export function getSaveButtonLabel(
     return "Save";
   }
   return isSaving ? "Saving..." : "Save";
-}
-
-export function getCommandSelectValue(
-  command: string,
-  normalizedCommandOptions: string[]
-): string {
-  return normalizedCommandOptions.includes(command) ? command : CUSTOM_COMMAND_VALUE;
 }

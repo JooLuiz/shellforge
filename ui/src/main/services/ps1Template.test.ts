@@ -14,10 +14,30 @@ describe("ps1Template", () => {
       command: "meu-comando --arg=1",
     });
 
+    expect(scriptContent).toContain("# managed by ShellForge UI");
     expect(scriptContent).toContain('$TaskName = "MeuComando"');
     expect(scriptContent).toContain('$triggerTimes = @("08:00", "17:00")');
     expect(scriptContent).toContain("[System.DayOfWeek]::Monday");
     expect(scriptContent).toContain("[System.DayOfWeek]::Friday");
     expect(scriptContent).toContain("meu-comando --arg=1");
+  });
+
+  it("writes scheduled command metadata comment when provided", () => {
+    const scriptContent = generateScheduledTaskScript({
+      actionName: "Notify",
+      triggerTimes: ["09:00"],
+      weekdays: ["Monday"],
+      command: 'perform-api-request --arg.message="Hi"',
+      commandMetadata: {
+        version: 1,
+        kind: "customActionAlias",
+        alias: "perform-api-request",
+        actionName: "performApiRequest",
+        actionArgs: { message: "Hi" },
+      },
+    });
+
+    expect(scriptContent).toContain("# shellforge:scheduledCommandV1 ");
+    expect(scriptContent).toContain('"alias":"perform-api-request"');
   });
 });

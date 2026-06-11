@@ -6,15 +6,23 @@ import { useScheduledTaskActions } from "./scheduled-tasks/hooks/useScheduledTas
 import { useScheduledTaskEditor } from "./scheduled-tasks/hooks/useScheduledTaskEditor";
 import type { ScheduledTasksTabProps } from "./scheduled-tasks/types";
 import { normalizeCommandOptions } from "./scheduled-tasks/utils";
+import { filterScheduledTasks } from "./scheduled-tasks/utils/scheduledTaskSearch";
 
 export function ScheduledTasksTab({
+  actionRunner,
+  customActions,
   scheduledTasks,
   refreshScheduledTasks,
+  isLoadingScheduledTasks,
+  scheduledTasksLoadError,
   commandOptions,
+  searchQuery,
   createRequestToken = 0,
   onCreateRequestConsumed,
 }: ScheduledTasksTabProps): JSX.Element {
   const editor = useScheduledTaskEditor({
+    actionRunner,
+    customActions,
     createRequestToken,
     onCreateRequestConsumed,
     refreshScheduledTasks,
@@ -30,6 +38,11 @@ export function ScheduledTasksTab({
     [scheduledTasks]
   );
 
+  const visibleTasks = useMemo(
+    () => filterScheduledTasks(sortedTasks, searchQuery),
+    [sortedTasks, searchQuery]
+  );
+
   const normalizedCommandOptions = useMemo(
     () => normalizeCommandOptions(commandOptions),
     [commandOptions]
@@ -41,8 +54,19 @@ export function ScheduledTasksTab({
 
   return (
     <section className="dashed-section">
+      {isLoadingScheduledTasks ? (
+        <div className="info-banner">Loading scheduled tasks...</div>
+      ) : null}
+      {scheduledTasksLoadError ? (
+        <div className="error-banner">{scheduledTasksLoadError}</div>
+      ) : null}
+
+      {visibleTasks.length === 0 && !isLoadingScheduledTasks && !scheduledTasksLoadError ? (
+        <div className="info-banner">No scheduled tasks match the current search.</div>
+      ) : null}
+
       <ScheduledTasksList
-        tasks={sortedTasks}
+        tasks={visibleTasks}
         togglingTaskNames={actions.togglingTaskNames}
         onEditTask={openEdit}
         onRemoveTask={actions.removeTask}
@@ -55,6 +79,8 @@ export function ScheduledTasksTab({
 
       {editor.modalMode ? (
         <ScheduledTaskModal
+          argumentSchema={editor.argumentSchema}
+          commandDraft={editor.commandDraft}
           commandOptions={normalizedCommandOptions}
           draft={editor.draft}
           editSaveStatus={editor.editSaveStatus}
@@ -63,10 +89,9 @@ export function ScheduledTasksTab({
           modalMode={editor.modalMode}
           onClose={editor.closeModal}
           onPersist={editor.persistDraft}
+          onUpdateCommandDraft={editor.updateCommandDraft}
           onUpdateDraft={editor.updateDraft}
-          onUpdateTriggerTimesInput={editor.updateTriggerTimesInput}
           saveButtonLabel={editor.saveButtonLabel}
-          triggerTimesInput={editor.triggerTimesInput}
         />
       ) : null}
     </section>

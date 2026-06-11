@@ -3,188 +3,199 @@ import ReactFlow, {
   Controls,
   type Edge,
   type Node,
-  type ReactFlowInstance,
 } from "reactflow";
 import { useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { ActionStep } from "../../../../shared/types";
-import type { EditSaveStatus, EditorMode, StepUpdater } from "../types";
-import { FLOW_LAYOUT_METRICS } from "../utils/flow";
+import type { ActionConfig, ActionStep } from "../../../../shared/types";
+import type {
+  ActionEditorDraft,
+  EditSaveStatus,
+  EditorMode,
+  FlowBreadcrumbSegment,
+  InsertionPoint,
+  StepPath,
+  StepUpdater,
+} from "../types";
+import { ModalCloseButton } from "../../../components/ModalCloseButton";
+import { useModalDismiss } from "../../../hooks/useModalDismiss";
+import { useFlowEditorViewport } from "../hooks/useFlowEditorViewport";
+import { getActionSteps } from "../utils/stepUtils";
+import type {
+  DraftFieldValidationKey,
+  FlowValidationBannerItem,
+  FlowValidationSeverity,
+} from "../utils/flowValidationUtils";
 import { customActionFlowNodeTypes } from "./flow/CustomActionFlowNodes";
-import { ActionDetailsPanel } from "./editor/ActionDetailsPanel";
+import { FlowScopeBreadcrumb } from "./flow/FlowScopeBreadcrumb";
+import { FlowValidationBanner } from "./flow/FlowValidationBanner";
+import { ActionEditorToolbar } from "./editor/ActionEditorToolbar";
+import { StepDetailsPanel } from "./editor/StepDetailsPanel";
 
 const FLOW_MIN_ZOOM = 0.2;
 const FLOW_MAX_ZOOM = 2;
-const FLOW_INITIAL_FIT_MAX_ZOOM = 1;
-const FLOW_FIT_PADDING = 0.25;
-const FLOW_FOCUS_ZOOM = 1.15;
-const FLOW_FOCUS_ANIMATION_MS = 300;
+
+function readBrowserProfileValue(editorDraft: ActionEditorDraft): string {
+  const browserProfile = editorDraft.actionConfig.browserProfile;
+  return typeof browserProfile === "string" ? browserProfile : "";
+}
 
 interface ActionEditorModalProps {
-  addStepAtIndex: (insertionIndex: number) => void;
+  actionRunner: Record<string, ActionConfig>;
+  addStepAtInsertionPoint: (insertionPoint: InsertionPoint) => void;
   changeSelectedStepAction: (nextActionType: string) => void;
   closeEditorModal: () => void;
+  configuredActionNames: string[];
   contextVariables: string[];
-  contextWarnings: Array<{
-    fieldPath: string;
-    stepIndex: number;
-    variableName: string;
-  }>;
   deleteSelectedStep: () => void;
-  editorDraft: { actionName: string };
-  editorErrorMessage: string | null;
+  draftFieldValidationState: Partial<Record<DraftFieldValidationKey, FlowValidationSeverity>>;
+  editorDraft: ActionEditorDraft;
   editorMode: Exclude<EditorMode, null>;
   editorSaveButtonLabel: string;
   editorSaveStatus: EditSaveStatus;
   edges: Edge[];
+  enterBlockScope: (blockStepPath: StepPath) => void;
+  fieldValidationByKey: Map<string, FlowValidationSeverity>;
+  flowBreadcrumbSegments: FlowBreadcrumbSegment[];
+  flowContainerPath: StepPath;
+  flowValidationBannerItems: FlowValidationBannerItem[];
+  hasBrowserSteps: boolean;
   isSavingEditor: boolean;
   jsonDraftByFieldId: Record<string, string>;
   jsonErrorByFieldId: Record<string, string>;
   nodes: Node[];
   persistEditorDraft: () => Promise<void>;
   selectedStep: ActionStep | null;
-  selectedStepIndex: number | null;
+  selectedStepPath: StepPath | null;
+  selectedStepPathKey: string;
   setJsonDraftByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
   setJsonErrorByFieldId: Dispatch<SetStateAction<Record<string, string>>>;
-  setSelectedStepIndex: (nextIndex: number | null) => void;
+  setFlowContainerPath: (nextPath: StepPath) => void;
+  setSelectedStepPath: (nextPath: StepPath | null) => void;
   updateActionName: (nextActionName: string) => void;
+  updateBrowserProfile: (nextProfile: string) => void;
   updateSelectedStep: (updater: StepUpdater) => void;
 }
 
 export function ActionEditorModal({
-  addStepAtIndex,
+  actionRunner,
+  addStepAtInsertionPoint,
   changeSelectedStepAction,
   closeEditorModal,
+  configuredActionNames,
   contextVariables,
-  contextWarnings,
   deleteSelectedStep,
+  draftFieldValidationState,
   editorDraft,
-  editorErrorMessage,
   editorMode,
   editorSaveButtonLabel,
   editorSaveStatus,
   edges,
+  enterBlockScope,
+  fieldValidationByKey,
+  flowBreadcrumbSegments,
+  flowContainerPath,
+  flowValidationBannerItems,
+  hasBrowserSteps,
   isSavingEditor,
   jsonDraftByFieldId,
   jsonErrorByFieldId,
   nodes,
   persistEditorDraft,
   selectedStep,
-  selectedStepIndex,
+  selectedStepPath,
+  selectedStepPathKey,
   setJsonDraftByFieldId,
   setJsonErrorByFieldId,
-  setSelectedStepIndex,
+  setFlowContainerPath,
+  setSelectedStepPath,
   updateActionName,
+  updateBrowserProfile,
   updateSelectedStep,
 }: ActionEditorModalProps): JSX.Element {
-  const reactFlowInstanceRef = useRef<ReactFlowInstance<Node, Edge> | null>(null);
+  const flowCanvasRef = useRef<HTMLDivElement>(null);
+  const rootSteps = getActionSteps(editorDraft.actionConfig);
 
-  const focusStepNode = (stepNode: Node): void => {
-    const reactFlowInstance = reactFlowInstanceRef.current;
-    if (!reactFlowInstance) {
-      return;
-    }
+  const { backdropProps, panelProps } = useModalDismiss(closeEditorModal);
 
-    const nodePosition = stepNode.positionAbsolute ?? stepNode.position;
-    const nodeWidth = stepNode.width ?? FLOW_LAYOUT_METRICS.stepNodeWidth;
-    const nodeHeight = stepNode.height ?? FLOW_LAYOUT_METRICS.stepNodeHeight;
-    const nodeCenterX = nodePosition.x + nodeWidth / 2;
-    const nodeCenterY = nodePosition.y + nodeHeight / 2;
-
-    void reactFlowInstance.setCenter(nodeCenterX, nodeCenterY, {
-      zoom: FLOW_FOCUS_ZOOM,
-      duration: FLOW_FOCUS_ANIMATION_MS,
-    });
-  };
+  const {
+    defaultViewport,
+    handleNodeClick,
+    handleNodeDoubleClick,
+    handleReactFlowInit,
+  } = useFlowEditorViewport({
+    addStepAtInsertionPoint,
+    enterBlockScope,
+    flowCanvasRef,
+    flowContainerPath,
+    nodes,
+    rootSteps,
+    setSelectedStepPath,
+  });
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className="modal-backdrop" {...backdropProps}>
+      <div className="modal" {...panelProps}>
         <header className="modal-header">
           <h3>{editorMode === "edit" ? "Edit Custom Action" : "New Custom Action"}</h3>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={closeEditorModal}
-            aria-label="Close modal"
-          >
-            X
-          </button>
+          <ModalCloseButton onClick={closeEditorModal} />
         </header>
         <div className="modal-body">
+          <ActionEditorToolbar
+            actionName={editorDraft.actionName}
+            browserProfile={readBrowserProfileValue(editorDraft)}
+            draftFieldValidationState={draftFieldValidationState}
+            editorMode={editorMode}
+            hasBrowserSteps={hasBrowserSteps}
+            updateActionName={updateActionName}
+            updateBrowserProfile={updateBrowserProfile}
+          />
+
           <div className="canvas-and-details">
-            <div className="flow-canvas">
+            <div className="flow-canvas" ref={flowCanvasRef}>
+              <FlowScopeBreadcrumb
+                segments={flowBreadcrumbSegments}
+                onNavigate={setFlowContainerPath}
+              />
+              <FlowValidationBanner items={flowValidationBannerItems} />
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={customActionFlowNodeTypes}
-                fitView
+                defaultViewport={defaultViewport}
                 minZoom={FLOW_MIN_ZOOM}
                 maxZoom={FLOW_MAX_ZOOM}
-                fitViewOptions={{
-                  maxZoom: FLOW_INITIAL_FIT_MAX_ZOOM,
-                  padding: FLOW_FIT_PADDING,
-                }}
-                onInit={(reactFlowInstance) => {
-                  reactFlowInstanceRef.current = reactFlowInstance;
-                }}
-                onNodeClick={(_event, node) => {
-                  if (node.id.startsWith("insert-")) {
-                    const insertionIndex = Number(node.id.replace("insert-", ""));
-                    if (!Number.isNaN(insertionIndex)) {
-                      addStepAtIndex(insertionIndex);
-                    }
-                    return;
-                  }
-                  if (node.id.startsWith("step-")) {
-                    const stepIndex = Number(node.id.replace("step-", ""));
-                    if (!Number.isNaN(stepIndex)) {
-                      setSelectedStepIndex(stepIndex);
-                      focusStepNode(node);
-                    }
-                  }
-                }}
+                zoomOnDoubleClick={false}
+                selectionKeyCode="Control"
+                onInit={handleReactFlowInit}
+                onNodeClick={handleNodeClick}
+                onNodeDoubleClick={handleNodeDoubleClick}
+                onPaneClick={() => setSelectedStepPath(null)}
               >
                 <Background />
                 <Controls />
               </ReactFlow>
+              <p className="flow-canvas-hint">Shift + scroll to pan vertically.</p>
             </div>
 
-            <ActionDetailsPanel
+            <StepDetailsPanel
+              actionRunner={actionRunner}
               changeSelectedStepAction={changeSelectedStepAction}
+              configuredActionNames={configuredActionNames}
               contextVariables={contextVariables}
               deleteSelectedStep={deleteSelectedStep}
+              enterBlockScope={enterBlockScope}
+              fieldValidationByKey={fieldValidationByKey}
+              flowContainerPath={flowContainerPath}
               jsonDraftByFieldId={jsonDraftByFieldId}
               jsonErrorByFieldId={jsonErrorByFieldId}
               selectedStep={selectedStep}
-              selectedStepIndex={selectedStepIndex}
+              selectedStepPath={selectedStepPath}
+              selectedStepPathKey={selectedStepPathKey}
               setJsonDraftByFieldId={setJsonDraftByFieldId}
               setJsonErrorByFieldId={setJsonErrorByFieldId}
-              updateActionName={updateActionName}
               updateSelectedStep={updateSelectedStep}
-              value={editorDraft.actionName}
             />
           </div>
-
-          {contextWarnings.length > 0 ? (
-            <div className="warning-box">
-              <strong>Context validation warnings</strong>
-              <ul>
-                {contextWarnings.map((warning) => (
-                  <li
-                    key={`${warning.stepIndex}-${warning.fieldPath}-${warning.variableName}`}
-                  >
-                    step {warning.stepIndex + 1}, field "{warning.fieldPath}" references
-                    missing variable "{warning.variableName}"
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {editorErrorMessage ? (
-            <div className="error-banner">{editorErrorMessage}</div>
-          ) : null}
 
           <div className="modal-actions">
             <button type="button" className="button button-red" onClick={closeEditorModal}>

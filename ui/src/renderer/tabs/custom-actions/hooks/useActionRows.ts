@@ -147,11 +147,6 @@ export function useActionRows({
       return false;
     }
 
-    const confirmed = window.confirm(`Delete action "${actionName}"?`);
-    if (!confirmed) {
-      return false;
-    }
-
     setRowSaveErrorMessage(null);
     setRowPendingState(actionName, true);
     const nextActionRunner = { ...config.actionRunner };

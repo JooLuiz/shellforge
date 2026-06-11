@@ -1,49 +1,68 @@
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  buildPredefinedCommandExecutablePaths,
+  getPredefinedCommandBatPath,
+  type PredefinedCommandKey,
+} from "../../shared/predefinedCommandsRegistry";
+import { getPackagedRuntimePath, getUserDataRepoRoot } from "./packagedDataBootstrap";
 
-interface RepoPaths {
-  repoRoot: string;
+export interface RepoPaths {
+  userDataRoot: string;
+  runtimeRoot: string;
   configPath: string;
   scheduledTasksDir: string;
-  touchBatPath: string;
-  reinitializeBatPath: string;
-  actionRunnerBatPath: string;
 }
 
 let cachedRepoPaths: RepoPaths | null = null;
 
-function hasRepoShape(repoRoot: string): boolean {
-  const configPath = path.join(repoRoot, "config", "config.json");
-  const scheduledTasksPath = path.join(repoRoot, "scheduled-tasks");
+function hasUserDataShape(userDataRoot: string): boolean {
+  const configPath = path.join(userDataRoot, "config", "config.json");
+  const scheduledTasksPath = path.join(userDataRoot, "scheduled-tasks");
   return fs.existsSync(configPath) && fs.existsSync(scheduledTasksPath);
 }
 
-function resolveRepoRoot(): string {
-  const envRepoRoot = process.env.WCC_REPO_ROOT;
-  if (envRepoRoot && hasRepoShape(envRepoRoot)) {
+function resolveDevRepoRoot(): string {
+  const envRepoRoot = process.env.SHELLFORGE_REPO_ROOT;
+  if (envRepoRoot && hasUserDataShape(envRepoRoot)) {
     return envRepoRoot;
   }
 
   const appPath = app.getAppPath();
   const appCandidate = path.resolve(appPath, "..");
-  if (hasRepoShape(appCandidate)) {
+  if (hasUserDataShape(appCandidate)) {
     return appCandidate;
   }
 
   const workingDirectory = process.cwd();
-  if (hasRepoShape(workingDirectory)) {
+  if (hasUserDataShape(workingDirectory)) {
     return workingDirectory;
   }
 
   const parentWorkingDirectory = path.resolve(workingDirectory, "..");
-  if (hasRepoShape(parentWorkingDirectory)) {
+  if (hasUserDataShape(parentWorkingDirectory)) {
     return parentWorkingDirectory;
   }
 
   throw new Error(
-    "Unable to resolve project root. Set WCC_REPO_ROOT to the windows-custom-commands repository path."
+    "Unable to resolve project root. Set SHELLFORGE_REPO_ROOT to the ShellForge repository path.",
   );
+}
+
+function resolveRepoRoots(): Pick<RepoPaths, "userDataRoot" | "runtimeRoot"> {
+  if (app.isPackaged) {
+    return {
+      userDataRoot: getUserDataRepoRoot(),
+      runtimeRoot: getPackagedRuntimePath(),
+    };
+  }
+
+  const repoRoot = resolveDevRepoRoot();
+  return {
+    userDataRoot: repoRoot,
+    runtimeRoot: repoRoot,
+  };
 }
 
 export function getRepoPaths(): RepoPaths {
@@ -51,15 +70,25 @@ export function getRepoPaths(): RepoPaths {
     return cachedRepoPaths;
   }
 
-  const repoRoot = resolveRepoRoot();
+  const { userDataRoot, runtimeRoot } = resolveRepoRoots();
   cachedRepoPaths = {
-    repoRoot,
-    configPath: path.join(repoRoot, "config", "config.json"),
-    scheduledTasksDir: path.join(repoRoot, "scheduled-tasks"),
-    touchBatPath: path.join(repoRoot, "touch", "touch.bat"),
-    reinitializeBatPath: path.join(repoRoot, "reinitialize", "reinitialize.bat"),
-    actionRunnerBatPath: path.join(repoRoot, "action-runner", "action-runner.bat"),
+    userDataRoot,
+    runtimeRoot,
+    configPath: path.join(userDataRoot, "config", "config.json"),
+    scheduledTasksDir: path.join(userDataRoot, "scheduled-tasks"),
   };
 
   return cachedRepoPaths;
+}
+
+export function resolvePredefinedCommandBatPath(commandKey: PredefinedCommandKey): string {
+  return getPredefinedCommandBatPath(getRepoPaths().runtimeRoot, commandKey);
+}
+
+export function resolvePredefinedCommandExecutablePaths(): Record<PredefinedCommandKey, string> {
+  return buildPredefinedCommandExecutablePaths(getRepoPaths().runtimeRoot);
+}
+
+export function resetRepoPathsCacheForTests(): void {
+  cachedRepoPaths = null;
 }

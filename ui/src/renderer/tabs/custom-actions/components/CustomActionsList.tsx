@@ -11,8 +11,8 @@ interface CustomActionsListProps {
   actionNames: string[];
   aliasDraftByActionName: Record<string, string>;
   config: AppConfig;
-  deleteAction: (actionName: string) => Promise<boolean>;
   onEditAction: (actionName: string) => void;
+  onRequestDeleteAction: (actionName: string) => void;
   onRunAction: (actionName: string) => void;
   rowPendingByActionName: Record<string, boolean>;
   saveRowMetadata: (actionName: string, metadataPatch: RowMetadataPatch) => Promise<boolean>;
@@ -23,8 +23,8 @@ export function CustomActionsList({
   actionNames,
   aliasDraftByActionName,
   config,
-  deleteAction,
   onEditAction,
+  onRequestDeleteAction,
   onRunAction,
   rowPendingByActionName,
   saveRowMetadata,
@@ -64,9 +64,7 @@ export function CustomActionsList({
                     type="button"
                     className="button button-red"
                     disabled={isRowPending}
-                    onClick={() => {
-                      void deleteAction(actionName);
-                    }}
+                    onClick={() => onRequestDeleteAction(actionName)}
                   >
                     Delete
                   </button>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ensureAppConfig } from "./defaults";
+import { PREDEFINED_COMMAND_KEYS } from "./predefinedCommandsRegistry";
 
 describe("ensureAppConfig", () => {
   // Scenario: legacy configs still using exposeInProfile should map to availableOnCLI.
@@ -44,5 +45,21 @@ describe("ensureAppConfig", () => {
     });
 
     expect(normalizedConfig.ui.customActions["modern-action"].availableOnCLI).toBe(false);
+  });
+
+  // Scenario: configs without ui.predefinedCommands entries for new commands.
+  // Expected: normalization creates all registry commands disabled by default.
+  it("normalizes every predefined command as disabled by default", () => {
+    const normalizedConfig = ensureAppConfig({
+      actionRunner: {},
+    });
+
+    expect(Object.keys(normalizedConfig.ui.predefinedCommands)).toHaveLength(
+      PREDEFINED_COMMAND_KEYS.length
+    );
+    PREDEFINED_COMMAND_KEYS.forEach((commandKey) => {
+      expect(normalizedConfig.ui.predefinedCommands[commandKey].enabled).toBe(false);
+      expect(normalizedConfig.ui.predefinedCommands[commandKey].alias).toBe(commandKey);
+    });
   });
 });

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="shellForgeMonoTitle shellForgeMonoDescription">
+  <title id="shellForgeMonoTitle">ShellForge Mark Monochrome</title>
+  <desc id="shellForgeMonoDescription">Minimal single-color ShellForge mark with shell prompt, hammer, and anvil.</desc>
+
+  <rect width="256" height="256" rx="44" fill="#1E293B" />
+
+  <g transform="translate(155 90) rotate(47)">
+    <rect x="-85" y="-8" width="85" height="16" rx="2" fill="#64748B" />
+    <rect x="-8" y="-39" width="44" height="78" rx="2" fill="#94A3B8" />
+  </g>
+
+  <path fill="#F8FAFC" d="M30 56 L70 99 L30 142 L44 142 L84 99 L44 56 Z" />
+  <rect x="70" y="146" width="130" height="8" rx="2" fill="#F8FAFC" />
+
+  <path fill="#64748B" d="M70 160 H200 L234 176 L200 192 H70 Z" />
+  <path fill="#546175" d="M196 166 H210 V174 H196 Z" />
+  <path fill="#64748B" d="M102 192 H168 L154 214 H116 Z" />
+  <rect x="70" y="212" width="132" height="20" rx="2" fill="#64748B" />
+</svg>

@@ -5,12 +5,7 @@ import type {
   PredefinedCommandKey,
   UiConfig,
 } from "./types";
-
-const PREDEFINED_COMMAND_KEYS: PredefinedCommandKey[] = [
-  "reinitialize",
-  "touch",
-  "action-runner",
-];
+import { PREDEFINED_COMMAND_KEYS } from "./predefinedCommandsRegistry";
 
 function sanitizeAlias(aliasCandidate: unknown, fallbackAlias: string): string {
   if (typeof aliasCandidate !== "string") {

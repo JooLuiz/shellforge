@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import type { RunCustomActionInput, RunCustomActionResult } from "../../shared/types";
 import { readConfig } from "./configService";
-import { getRepoPaths } from "./repoPaths";
+import { getRepoPaths, resolvePredefinedCommandBatPath } from "./repoPaths";
 
 function buildCliArgs(input: RunCustomActionInput): string[] {
   const actionArgs = Object.entries(input.args)
@@ -22,7 +22,8 @@ export async function runCustomAction(input: RunCustomActionInput): Promise<RunC
     throw new Error(`Action "${actionName}" does not exist in config.`);
   }
 
-  const { actionRunnerBatPath, repoRoot } = getRepoPaths();
+  const { userDataRoot } = getRepoPaths();
+  const actionRunnerBatPath = resolvePredefinedCommandBatPath("action-runner");
   const args = buildCliArgs({
     actionName,
     args: input.args,
@@ -30,9 +31,13 @@ export async function runCustomAction(input: RunCustomActionInput): Promise<RunC
 
   const executionResult = await new Promise<RunCustomActionResult>((resolve, reject) => {
     const childProcess = spawn(actionRunnerBatPath, args, {
-      cwd: repoRoot,
+      cwd: userDataRoot,
       shell: true,
       windowsHide: true,
+      env: {
+        ...process.env,
+        SHELLFORGE_USER_DATA: userDataRoot,
+      },
     });
 
     let stdoutContent = "";

@@ -1,13 +1,5 @@
 {
   "actionRunner": {
-    "simple-login": {
-      "url": "https://example.com/login",
-      "usernameInput": "#email",
-      "usernameValue": "user@example.com",
-      "passwordInput": "#password",
-      "passwordValue": "your-password",
-      "loginButton": "#submit"
-    },
     "multi-step-login": {
       "steps": [
         {
@@ -53,7 +45,7 @@
           "url": "https://app.example.com/dashboard"
         },
         {
-          "action": "wait",
+          "action": "waitForPageState",
           "selector": ".data-grid",
           "timeout": 10000
         },
@@ -69,7 +61,7 @@
           },
           "steps": [
             {
-              "action": "wait",
+              "action": "waitForPageState",
               "selector": ".modal-dialog",
               "timeout": 5000
             },
@@ -78,7 +70,7 @@
               "selector": "button[data-role='category']"
             },
             {
-              "action": "wait",
+              "action": "waitForPageState",
               "selector": ".category-picker"
             },
             {
@@ -141,8 +133,8 @@
           "storeAs": "tasksResponse"
         },
         {
-          "action": "extractVariable",
-          "source": "{{context.tasksResponse.data.0.id}}",
+          "action": "setVariable",
+          "source": "{{context.tasksResponse.body.data.0.id}}",
           "storeAs": "taskId"
         },
         {
@@ -215,7 +207,7 @@
           "required": ["taskId"]
         },
         {
-          "action": "extractVariable",
+          "action": "setVariable",
           "source": "{{env.TASK_DETAILS_FOLDER}}\\task-{{context.taskId}}.json",
           "storeAs": "taskDetailsFilePath"
         },
@@ -350,7 +342,7 @@
               "storeAs": "taskResult"
             },
             {
-              "action": "extractVariable",
+              "action": "setVariable",
               "source": "{{context.taskResult.taskId}}",
               "storeAs": "taskId"
             },
@@ -390,9 +382,5 @@
         }
       ]
     }
-  },
-  "scheduler": {
-    "serverPort": 3002,
-    "userPassword": ""
   }
 }

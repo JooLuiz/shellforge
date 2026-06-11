@@ -14,6 +14,8 @@ import {
   renameInvokeActionReferencesInConfig,
   serializeEditorDraft,
 } from "../utils/actionConfigUtils";
+import { validateActionEditorDraft } from "../utils/actionEditorValidation";
+import { hasBlockingEditorSaveIssues } from "../utils/flowValidationUtils";
 import { cloneActionConfig } from "../utils/stepUtils";
 
 interface UseEditorPersistenceInput {
@@ -32,6 +34,7 @@ interface UseEditorPersistenceInput {
   setEditorSaveStatus: (status: EditSaveStatus) => void;
   setIsSavingEditor: (isSaving: boolean) => void;
   setLastSavedSnapshot: (snapshot: string) => void;
+  setShowValidationFeedback: (showValidationFeedback: boolean) => void;
 }
 
 interface UseEditorPersistenceResult {
@@ -55,26 +58,33 @@ export function useEditorPersistence({
   setEditorSaveStatus,
   setIsSavingEditor,
   setLastSavedSnapshot,
+  setShowValidationFeedback,
 }: UseEditorPersistenceInput): UseEditorPersistenceResult {
   const persistEditorDraft = useCallback(async (): Promise<void> => {
     if (!editorDraft || !editorMode) {
       return;
     }
-    const nextActionName = editorDraft.actionName.trim();
-    if (!nextActionName) {
-      setEditorErrorMessage("Action name cannot be empty.");
+
+    setShowValidationFeedback(true);
+    setEditorErrorMessage(null);
+
+    const validationIssues = validateActionEditorDraft(editorDraft, config);
+    if (
+      hasBlockingEditorSaveIssues({
+        draft: editorDraft,
+        config,
+        editorMode,
+        editorOriginalActionName,
+        editorValidationIssues: validationIssues,
+      })
+    ) {
       return;
     }
+
+    const nextActionName = editorDraft.actionName.trim();
     const isRenaming =
       editorMode === "edit" && editorOriginalActionName !== nextActionName;
-    const actionNameAlreadyExists =
-      config.actionRunner[nextActionName] &&
-      (!isRenaming || editorOriginalActionName !== nextActionName);
-    if (actionNameAlreadyExists) {
-      setEditorErrorMessage(`Action "${nextActionName}" already exists.`);
-      return;
-    }
-    setEditorErrorMessage(null);
+
     setIsSavingEditor(true);
     if (editorMode === "edit") {
       setEditorSaveStatus("saving");
@@ -154,6 +164,7 @@ export function useEditorPersistence({
       setEditorOriginalActionName(nextActionName);
       setLastSavedSnapshot(serializeEditorDraft(persistedDraft));
       setEditorSaveStatus("saved");
+      setShowValidationFeedback(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown save error";
       setEditorErrorMessage(message);
@@ -176,6 +187,7 @@ export function useEditorPersistence({
     setEditorSaveStatus,
     setIsSavingEditor,
     setLastSavedSnapshot,
+    setShowValidationFeedback,
   ]);
 
   useEffect(() => {

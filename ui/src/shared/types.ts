@@ -1,4 +1,7 @@
-export type PredefinedCommandKey = "reinitialize" | "touch" | "action-runner";
+export type { PredefinedCommandKey } from "./predefinedCommandsRegistry";
+import type { PredefinedCommandKey } from "./predefinedCommandsRegistry";
+export type { ThemeMode } from "./themeBridge";
+import type { ThemeMode } from "./themeBridge";
 
 export interface PredefinedCommandConfig {
   enabled: boolean;
@@ -35,6 +38,31 @@ export interface AppConfig {
 export interface ProfileStatus {
   profilePath: string;
   blockPresent: boolean;
+  currentUserExecutionPolicy: string | null;
+  issues: ProfileIssue[];
+  isHealthy: boolean;
+}
+
+export type ProfileIssueCode =
+  | "profilePathUnresolved"
+  | "profileDirectoryNotWritable"
+  | "profileFileNotWritable"
+  | "executionPolicyRestricted"
+  | "managedBlockMissing";
+
+export interface ProfileIssue {
+  code: ProfileIssueCode;
+  message: string;
+  remediation: string;
+}
+
+export interface ScheduledTaskCommandMetadata {
+  version: 1;
+  kind: "customActionAlias" | "custom";
+  alias?: string;
+  actionName?: string;
+  verbose?: boolean;
+  actionArgs?: Record<string, string>;
 }
 
 export interface ScheduledTaskRecord {
@@ -43,6 +71,7 @@ export interface ScheduledTaskRecord {
   triggerTimes: string[];
   weekdays: string[];
   command: string;
+  commandMetadata?: ScheduledTaskCommandMetadata;
   isEnabled: boolean;
   parseError?: string;
 }
@@ -53,6 +82,7 @@ export interface ScheduledTaskInput {
   triggerTimes: string[];
   weekdays: string[];
   command: string;
+  commandMetadata?: ScheduledTaskCommandMetadata;
 }
 
 export interface RunCustomActionInput {
@@ -65,8 +95,16 @@ export interface RunCustomActionResult {
   stderr: string;
 }
 
-export interface ContextValidationWarning {
+export interface StepPathSegment {
+  arrayKey: string;
   stepIndex: number;
+}
+
+/** Addresses any step in the nested step tree. */
+export type StepPath = StepPathSegment[];
+
+export interface ContextValidationWarning {
+  stepPath: StepPath;
   fieldPath: string;
   variableName: string;
 }
@@ -84,6 +122,7 @@ export interface AppApi {
   profile: {
     status: () => Promise<ProfileStatus>;
     regenerate: () => Promise<void>;
+    openFolder: () => Promise<void>;
   };
   scheduledTasks: {
     list: () => Promise<ScheduledTaskRecord[]>;
@@ -93,5 +132,11 @@ export interface AppApi {
   };
   customActions: {
     run: (input: RunCustomActionInput) => Promise<RunCustomActionResult>;
+  };
+  browserProfiles: {
+    list: () => Promise<string[]>;
+  };
+  theme: {
+    set: (theme: ThemeMode) => Promise<void>;
   };
 }

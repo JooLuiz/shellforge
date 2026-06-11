@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { parseScheduledCommandMetadataLine } from "../../shared/scheduledTaskCommand";
 import type { ScheduledTaskRecord } from "../../shared/types";
 import { getRepoPaths } from "./repoPaths";
 
@@ -64,6 +65,7 @@ export function parseScheduledTaskContent(fileName: string, content: string): Sc
     triggerTimes: parsedTriggerTimes,
     weekdays: parseWeekdays(content),
     command: parseCommand(content),
+    commandMetadata: parseScheduledCommandMetadataLine(content) ?? undefined,
     isEnabled: false,
   };
 }

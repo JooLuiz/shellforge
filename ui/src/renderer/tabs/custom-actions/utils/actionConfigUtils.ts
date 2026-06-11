@@ -2,6 +2,8 @@ import type { ActionConfig, ActionStep } from "../../../../shared/types";
 import type { ActionEditorDraft } from "../types";
 import { cloneActionConfig, getActionSteps, isActionStep } from "./stepUtils";
 
+export { collectActionArgumentSchema, collectRequiredArgs } from "../../../../shared/actionArgumentSchema";
+
 export function serializeEditorDraft(draft: ActionEditorDraft): string {
   return JSON.stringify(draft);
 }
@@ -12,7 +14,7 @@ function mapStepsRecursively(
 ): ActionStep[] {
   return steps.map((step) => {
     let mappedStep = mapper({ ...step });
-    const nestedStepKeys = ["steps", "try", "catch", "finally"];
+    const nestedStepKeys = ["steps", "try", "catch", "finally", "then", "else"];
     nestedStepKeys.forEach((nestedKey) => {
       const nestedValue = mappedStep[nestedKey];
       if (!Array.isArray(nestedValue)) {
@@ -43,28 +45,4 @@ export function renameInvokeActionReferencesInConfig(
       return step;
     }),
   };
-}
-
-export function collectRequiredArgs(actionConfig: ActionConfig): string[] {
-  const requiredArgs = new Set<string>();
-  const inspectSteps = (steps: ActionStep[]): void => {
-    steps.forEach((step) => {
-      if (step.action === "getArguments" && Array.isArray(step.required)) {
-        step.required
-          .filter((requiredArg) => typeof requiredArg === "string")
-          .forEach((requiredArg) => requiredArgs.add(requiredArg));
-      }
-      ["steps", "try", "catch", "finally"].forEach((nestedKey) => {
-        const nestedValue = step[nestedKey];
-        if (!Array.isArray(nestedValue)) {
-          return;
-        }
-        const nestedSteps = nestedValue.filter(isActionStep);
-        inspectSteps(nestedSteps);
-      });
-    });
-  };
-
-  inspectSteps(getActionSteps(actionConfig));
-  return Array.from(requiredArgs);
 }

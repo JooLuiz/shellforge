@@ -1,14 +1,17 @@
 {
-  "name": "windows-custom-commands",
+  "name": "shellforge",
   "version": "0.1.5",
-  "description": "custom windows powershell commands",
+  "description": "ShellForge - custom Windows PowerShell automation and commands",
   "license": "ISC",
   "author": "João Luiz de Castro",
   "scripts": {
-    "test": "node --test action-runner/tests",
+    "test": "node --test commands/action-runner/tests command-lib/tests",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build --prefix ui",
-    "ui:test": "npm run test --prefix ui"
+    "ui:dist": "npm run dist:full --prefix ui",
+    "ui:test": "npm run test --prefix ui",
+    "page:dev": "npm run dev --prefix page",
+    "page:build": "npm run build --prefix page"
   },
   "dependencies": {
     "puppeteer": "^22.9.0",

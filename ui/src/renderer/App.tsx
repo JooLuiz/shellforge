@@ -1,10 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
-import type { AppConfig, ProfileStatus, ScheduledTaskRecord } from "../shared/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  AppConfig,
+  ProfileStatus,
+  ScheduledTaskRecord,
+} from "../shared/types";
 import { PredefinedCommandsTab } from "./tabs/PredefinedCommandsTab";
+import { PredefinedCommandFilters } from "./tabs/predefined-commands/PredefinedCommandFilters";
+import type { PredefinedCommandFilterCategory } from "./tabs/predefined-commands/predefinedCommandFilterUtils";
 import { ScheduledTasksTab } from "./tabs/ScheduledTasksTab";
 import { CustomActionsTab } from "./tabs/CustomActionsTab";
+import { buildCliAvailableCommandOptions } from "./tabs/scheduled-tasks/utils";
+import shellForgeMark from "./assets/logo/shell-forge-mark.svg";
+import { AppFooter } from "./components/AppFooter";
+import { ProfileHealthBanner } from "./components/ProfileHealthBanner";
+import { TabHeaderSearch } from "./components/TabHeaderSearch";
+import { useTheme } from "./hooks/useTheme";
 
 type TabId = "predefined" | "custom" | "scheduled";
+type ScheduledTasksLoadStatus = "idle" | "loading" | "loaded" | "error";
 
 interface TabDefinition {
   id: TabId;
@@ -36,9 +49,14 @@ const TABS: TabDefinition[] = [
 ];
 
 function getApiOrThrow() {
-  if (!window.api || !window.api.config || !window.api.profile || !window.api.scheduledTasks) {
+  if (
+    !window.api ||
+    !window.api.config ||
+    !window.api.profile ||
+    !window.api.scheduledTasks
+  ) {
     throw new Error(
-      "Desktop bridge unavailable (window.api). Restart the app after rebuilding the UI."
+      "Desktop bridge unavailable (window.api). Restart the app after rebuilding the UI.",
     );
   }
   return window.api;
@@ -47,30 +65,38 @@ function getApiOrThrow() {
 export default function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabId>("predefined");
   const [config, setConfig] = useState<AppConfig | null>(null);
-  const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null);
-  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTaskRecord[]>([]);
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(
+    null,
+  );
+  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTaskRecord[]>(
+    [],
+  );
+  const [scheduledTasksLoadStatus, setScheduledTasksLoadStatus] =
+    useState<ScheduledTasksLoadStatus>("idle");
+  const [scheduledTasksLoadError, setScheduledTasksLoadError] = useState<
+    string | null
+  >(null);
   const [customCreateRequestToken, setCustomCreateRequestToken] = useState(0);
-  const [scheduledCreateRequestToken, setScheduledCreateRequestToken] = useState(0);
+  const [scheduledCreateRequestToken, setScheduledCreateRequestToken] =
+    useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [tabSearchQuery, setTabSearchQuery] = useState("");
+  const [predefinedCategoryFilter, setPredefinedCategoryFilter] =
+    useState<PredefinedCommandFilterCategory>("all");
+  const { setTheme, theme } = useTheme();
 
   const activeTabDefinition = useMemo(
     () => TABS.find((tab) => tab.id === activeTab) ?? TABS[0],
-    [activeTab]
+    [activeTab],
   );
 
   const customActionCommandOptions = useMemo(() => {
     if (!config) {
       return [];
     }
-    return Array.from(
-      new Set(
-        Object.entries(config.ui.customActions)
-          .map(([actionName, customAction]) => customAction.aliases[0] ?? actionName)
-          .filter((alias) => alias.trim().length > 0)
-      )
-    ).sort((leftAlias, rightAlias) => leftAlias.localeCompare(rightAlias));
+    return buildCliAvailableCommandOptions(config.ui.customActions);
   }, [config]);
 
   const loadInitialData = async (): Promise<void> => {
@@ -78,16 +104,15 @@ export default function App(): JSX.Element {
     setErrorMessage(null);
     try {
       const appApi = getApiOrThrow();
-      const [nextConfig, nextProfileStatus, nextScheduledTasks] = await Promise.all([
+      const [nextConfig, nextProfileStatus] = await Promise.all([
         appApi.config.read(),
         appApi.profile.status(),
-        appApi.scheduledTasks.list(),
       ]);
       setConfig(nextConfig);
       setProfileStatus(nextProfileStatus);
-      setScheduledTasks(nextScheduledTasks);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown load error";
+      const message =
+        error instanceof Error ? error.message : "Unknown load error";
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -97,6 +122,12 @@ export default function App(): JSX.Element {
   useEffect(() => {
     void loadInitialData();
   }, []);
+
+  const refreshProfileStatus = async (): Promise<void> => {
+    const appApi = getApiOrThrow();
+    const nextProfileStatus = await appApi.profile.status();
+    setProfileStatus(nextProfileStatus);
+  };
 
   const saveConfig = async (nextConfig: AppConfig): Promise<void> => {
     setIsSaving(true);
@@ -109,7 +140,8 @@ export default function App(): JSX.Element {
       setConfig(nextConfig);
       setProfileStatus(nextProfileStatus);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown save error";
+      const message =
+        error instanceof Error ? error.message : "Unknown save error";
       setErrorMessage(message);
       throw error;
     } finally {
@@ -117,18 +149,55 @@ export default function App(): JSX.Element {
     }
   };
 
-  const refreshScheduledTasks = async (): Promise<void> => {
-    const appApi = getApiOrThrow();
-    const nextTasks = await appApi.scheduledTasks.list();
-    setScheduledTasks(nextTasks);
-  };
+  const refreshScheduledTasks = useCallback(async (): Promise<void> => {
+    setScheduledTasksLoadStatus("loading");
+    setScheduledTasksLoadError(null);
+    try {
+      const appApi = getApiOrThrow();
+      const nextTasks = await appApi.scheduledTasks.list();
+      setScheduledTasks(nextTasks);
+      setScheduledTasksLoadStatus("loaded");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unknown scheduled tasks load error";
+      setScheduledTasksLoadError(message);
+      setScheduledTasksLoadStatus("error");
+      throw error;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "scheduled" || scheduledTasksLoadStatus !== "idle") {
+      return;
+    }
+
+    void refreshScheduledTasks().catch(() => {
+      // Error state is already set inside refreshScheduledTasks.
+    });
+  }, [activeTab, refreshScheduledTasks, scheduledTasksLoadStatus]);
+
+  useEffect(() => {
+    setTabSearchQuery("");
+    setPredefinedCategoryFilter("all");
+  }, [activeTab]);
+
+  const tabSearchPlaceholder =
+    activeTab === "predefined"
+      ? "Search predefined commands..."
+      : activeTab === "custom"
+        ? "Search custom actions..."
+        : "Search scheduled tasks...";
 
   const tabHeaderAction =
     activeTab === "custom" ? (
       <button
         type="button"
         className="button button-teal"
-        onClick={() => setCustomCreateRequestToken((previousToken) => previousToken + 1)}
+        onClick={() =>
+          setCustomCreateRequestToken((previousToken) => previousToken + 1)
+        }
       >
         New Action
       </button>
@@ -136,7 +205,9 @@ export default function App(): JSX.Element {
       <button
         type="button"
         className="button button-teal"
-        onClick={() => setScheduledCreateRequestToken((previousToken) => previousToken + 1)}
+        onClick={() =>
+          setScheduledCreateRequestToken((previousToken) => previousToken + 1)
+        }
       >
         New Schedule
       </button>
@@ -146,13 +217,24 @@ export default function App(): JSX.Element {
     <div className="app-page">
       <div className="window-frame">
         <header className="window-header">
-          <h1>(Logo) WCC</h1>
+          <div className="brand-block">
+            <img
+              src={shellForgeMark}
+              alt="ShellForge mark"
+              className="brand-mark"
+            />
+            <div className="brand-copy">
+              <h1 className="brand-heading">ShellForge</h1>
+            </div>
+          </div>
           <nav className="tab-row" aria-label="Main app sections">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                className={tab.id === activeTab ? "tab-button active" : "tab-button"}
+                className={
+                  tab.id === activeTab ? "tab-button active" : "tab-button"
+                }
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.label}
@@ -162,61 +244,106 @@ export default function App(): JSX.Element {
         </header>
 
         <section className="tab-header">
-          <div>
-            <h2>{activeTabDefinition.title}</h2>
-            <p>{activeTabDefinition.description}</p>
-            {profileStatus ? (
-              <small className="profile-caption">
-                Profile: {profileStatus.profilePath} (
-                {profileStatus.blockPresent ? "managed block found" : "managed block missing"})
-              </small>
-            ) : null}
+          <div className="tab-header-top">
+            <div>
+              <h2>{activeTabDefinition.title}</h2>
+              <p>{activeTabDefinition.description}</p>
+            </div>
+            <div className="tab-header-actions">
+              <TabHeaderSearch
+                value={tabSearchQuery}
+                onChange={setTabSearchQuery}
+                placeholder={tabSearchPlaceholder}
+              />
+              {tabHeaderAction}
+            </div>
           </div>
-          <div className="tab-header-actions">{tabHeaderAction}</div>
+          {activeTab === "predefined" ? (
+            <div className="tab-header-filters">
+              <PredefinedCommandFilters
+                activeCategory={predefinedCategoryFilter}
+                onCategoryChange={setPredefinedCategoryFilter}
+              />
+            </div>
+          ) : null}
         </section>
 
         <div className="tab-content-scroll">
-          {isLoading ? <div className="info-banner">Loading desktop manager...</div> : null}
-          {!config && !isLoading ? <div className="error-banner">Failed to load config.</div> : null}
-          {errorMessage ? <div className="error-banner">{errorMessage}</div> : null}
+          {isLoading ? (
+            <div className="info-banner">Loading desktop manager...</div>
+          ) : null}
+          {!config && !isLoading ? (
+            <div className="error-banner">Failed to load config.</div>
+          ) : null}
+          {errorMessage ? (
+            <div className="error-banner">{errorMessage}</div>
+          ) : null}
+
+          {profileStatus ? (
+            <ProfileHealthBanner
+              profileStatus={profileStatus}
+              isSaving={isSaving}
+              onRegenerate={async () => {
+                setErrorMessage(null);
+                try {
+                  const appApi = getApiOrThrow();
+                  await appApi.profile.regenerate();
+                  await refreshProfileStatus();
+                } catch (error) {
+                  const message =
+                    error instanceof Error ? error.message : "Unable to regenerate profile block.";
+                  setErrorMessage(message);
+                }
+              }}
+              onOpenFolder={async () => {
+                const appApi = getApiOrThrow();
+                await appApi.profile.openFolder();
+              }}
+            />
+          ) : null}
 
           {config ? (
             <main className="main-content">
               {activeTab === "predefined" ? (
-                <PredefinedCommandsTab config={config} onSave={saveConfig} />
+                <PredefinedCommandsTab
+                  config={config}
+                  onSave={saveConfig}
+                  searchQuery={tabSearchQuery}
+                  categoryFilter={predefinedCategoryFilter}
+                />
               ) : null}
               {activeTab === "custom" ? (
                 <CustomActionsTab
                   config={config}
                   onSave={saveConfig}
+                  searchQuery={tabSearchQuery}
                   createRequestToken={customCreateRequestToken}
                   onCreateRequestConsumed={() => setCustomCreateRequestToken(0)}
                 />
               ) : null}
               {activeTab === "scheduled" ? (
                 <ScheduledTasksTab
+                  actionRunner={config.actionRunner}
+                  customActions={config.ui.customActions}
                   scheduledTasks={scheduledTasks}
                   refreshScheduledTasks={refreshScheduledTasks}
+                  isLoadingScheduledTasks={
+                    scheduledTasksLoadStatus === "loading"
+                  }
+                  scheduledTasksLoadError={scheduledTasksLoadError}
                   commandOptions={customActionCommandOptions}
+                  searchQuery={tabSearchQuery}
                   createRequestToken={scheduledCreateRequestToken}
-                  onCreateRequestConsumed={() => setScheduledCreateRequestToken(0)}
+                  onCreateRequestConsumed={() =>
+                    setScheduledCreateRequestToken(0)
+                  }
                 />
               ) : null}
             </main>
           ) : null}
         </div>
 
-        <footer className="app-footer">
-          <span>Copyright 2026 (place a better message here)</span>
-          <div className="footer-links">
-            <a href="https://www.google.com/chrome/" target="_blank" rel="noreferrer">
-              Chrome
-            </a>
-            <a href="https://github.com/" target="_blank" rel="noreferrer">
-              GitHub
-            </a>
-          </div>
-        </footer>
+        <AppFooter setTheme={setTheme} theme={theme} />
       </div>
       {isSaving ? <div className="saving-chip">Saving...</div> : null}
     </div>

@@ -1,6 +1,15 @@
 @media (max-width: 1400px) {
-  .window-header h1 {
-    font-size: 36px;
+  .brand-mark {
+    width: 52px;
+    height: 52px;
+  }
+
+  .brand-heading {
+    font-size: 30px;
+  }
+
+  .brand-subheading {
+    font-size: 14px;
   }
 
   .tab-button {

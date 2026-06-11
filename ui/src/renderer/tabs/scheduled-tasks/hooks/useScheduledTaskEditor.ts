@@ -1,42 +1,93 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ScheduledTaskInput, ScheduledTaskRecord } from "../../../../shared/types";
+import type {
+  ActionConfig,
+  CustomActionUiConfig,
+  ScheduledTaskInput,
+  ScheduledTaskRecord,
+} from "../../../../shared/types";
+import type { ScheduledCommandDraft } from "../../../../shared/scheduledTaskCommand";
 import { EDIT_AUTOSAVE_DELAY_MS, EMPTY_FORM } from "../constants";
 import type { ScheduledTaskEditorState } from "../types";
+import { getSaveButtonLabel, serializeTaskDraft } from "../utils";
 import {
-  getSaveButtonLabel,
-  parseTriggerTimes,
-  serializeTaskDraft,
-} from "../utils";
+  applyAliasSelection,
+  applyCommandInputChange,
+  createEmptyCommandDraft,
+  hydrateCommandDraft,
+  mergeCommandDraftIntoTaskInput,
+  resolveArgumentSchema,
+} from "../utils/scheduledTaskCommandDraft";
+import { getCommandInputValue } from "../../../../shared/scheduledTaskCommand";
 
 interface UseScheduledTaskEditorInput {
+  actionRunner: Record<string, ActionConfig>;
   createRequestToken: number;
+  customActions: Record<string, CustomActionUiConfig>;
   onCreateRequestConsumed?: () => void;
   refreshScheduledTasks: () => Promise<void>;
 }
 
 interface UseScheduledTaskEditorResult extends ScheduledTaskEditorState {
+  argumentSchema: ReturnType<typeof resolveArgumentSchema>;
   closeModal: () => void;
+  commandDraft: ScheduledCommandDraft;
   openCreate: () => void;
   openEdit: (task: ScheduledTaskRecord) => void;
   persistDraft: () => Promise<void>;
   setErrorMessage: (message: string | null) => void;
+  updateCommandDraft: (updater: (previousDraft: ScheduledCommandDraft) => ScheduledCommandDraft) => void;
   updateDraft: (updater: (previousDraft: ScheduledTaskInput) => ScheduledTaskInput) => void;
-  updateTriggerTimesInput: (nextValue: string) => void;
+}
+
+function markEditDirty(
+  nextDraft: ScheduledTaskInput,
+  lastSavedSnapshot: string,
+): ScheduledTaskEditorState["editSaveStatus"] {
+  const nextSnapshot = serializeTaskDraft(nextDraft);
+  return nextSnapshot === lastSavedSnapshot ? "saved" : "dirty";
+}
+
+function syncTaskInputFromCommandDraft(
+  taskInput: ScheduledTaskInput,
+  commandDraft: ScheduledCommandDraft,
+): ScheduledTaskInput {
+  return mergeCommandDraftIntoTaskInput(taskInput, commandDraft);
 }
 
 export function useScheduledTaskEditor({
+  actionRunner,
   createRequestToken,
+  customActions,
   onCreateRequestConsumed,
   refreshScheduledTasks,
 }: UseScheduledTaskEditorInput): UseScheduledTaskEditorResult {
   const [modalMode, setModalMode] = useState<ScheduledTaskEditorState["modalMode"]>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState<ScheduledTaskInput>(EMPTY_FORM);
-  const [triggerTimesInput, setTriggerTimesInput] = useState("");
+  const [commandDraft, setCommandDraft] = useState<ScheduledCommandDraft>(createEmptyCommandDraft());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editSaveStatus, setEditSaveStatus] =
     useState<ScheduledTaskEditorState["editSaveStatus"]>("saved");
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState("");
+
+  const argumentSchema = useMemo(
+    () => resolveArgumentSchema(commandDraft, actionRunner),
+    [actionRunner, commandDraft],
+  );
+
+  const applyCommandDraftUpdate = useCallback(
+    (nextCommandDraft: ScheduledCommandDraft): void => {
+      setCommandDraft(nextCommandDraft);
+      setDraft((previousTaskDraft) => {
+        const nextTaskDraft = syncTaskInputFromCommandDraft(previousTaskDraft, nextCommandDraft);
+        if (modalMode === "edit") {
+          setEditSaveStatus(markEditDirty(nextTaskDraft, lastSavedSnapshot));
+        }
+        return nextTaskDraft;
+      });
+    },
+    [lastSavedSnapshot, modalMode],
+  );
 
   const closeModal = useCallback((): void => {
     setModalMode(null);
@@ -45,8 +96,9 @@ export function useScheduledTaskEditor({
   }, []);
 
   const openCreate = useCallback((): void => {
-    setDraft(EMPTY_FORM);
-    setTriggerTimesInput("");
+    const emptyCommandDraft = createEmptyCommandDraft();
+    setCommandDraft(emptyCommandDraft);
+    setDraft(syncTaskInputFromCommandDraft(EMPTY_FORM, emptyCommandDraft));
     setErrorMessage(null);
     setEditSaveStatus("dirty");
     setLastSavedSnapshot("");
@@ -61,46 +113,95 @@ export function useScheduledTaskEditor({
     onCreateRequestConsumed?.();
   }, [createRequestToken, onCreateRequestConsumed, openCreate]);
 
-  const openEdit = useCallback((task: ScheduledTaskRecord): void => {
-    const taskDraft: ScheduledTaskInput = {
-      originalFileName: task.fileName,
-      actionName: task.actionName,
-      triggerTimes: task.triggerTimes,
-      weekdays: task.weekdays,
-      command: task.command,
-    };
-    const taskTriggerTimesInput = task.triggerTimes.join(", ");
-    setDraft(taskDraft);
-    setTriggerTimesInput(taskTriggerTimesInput);
-    setErrorMessage(null);
-    setEditSaveStatus("saved");
-    setLastSavedSnapshot(serializeTaskDraft(taskDraft, taskTriggerTimesInput));
-    setModalMode("edit");
-  }, []);
+  const openEdit = useCallback(
+    (task: ScheduledTaskRecord): void => {
+      const hydratedCommandDraft = hydrateCommandDraft(
+        task.command,
+        task.commandMetadata,
+        customActions,
+      );
+      const taskDraft: ScheduledTaskInput = syncTaskInputFromCommandDraft(
+        {
+          originalFileName: task.fileName,
+          actionName: task.actionName,
+          triggerTimes: task.triggerTimes,
+          weekdays: task.weekdays,
+          command: task.command,
+          commandMetadata: task.commandMetadata,
+        },
+        hydratedCommandDraft,
+      );
+
+      setCommandDraft(hydratedCommandDraft);
+      setDraft(taskDraft);
+      setErrorMessage(null);
+      setEditSaveStatus("saved");
+      setLastSavedSnapshot(serializeTaskDraft(taskDraft));
+      setModalMode("edit");
+    },
+    [customActions],
+  );
 
   const updateDraft = useCallback(
     (updater: (previousDraft: ScheduledTaskInput) => ScheduledTaskInput): void => {
       setDraft((previousDraft) => {
         const nextDraft = updater(previousDraft);
         if (modalMode === "edit") {
-          const nextSnapshot = serializeTaskDraft(nextDraft, triggerTimesInput);
-          setEditSaveStatus(nextSnapshot === lastSavedSnapshot ? "saved" : "dirty");
+          setEditSaveStatus(markEditDirty(nextDraft, lastSavedSnapshot));
         }
         return nextDraft;
       });
     },
-    [lastSavedSnapshot, modalMode, triggerTimesInput]
+    [lastSavedSnapshot, modalMode],
   );
 
-  const updateTriggerTimesInput = useCallback(
-    (nextValue: string): void => {
-      setTriggerTimesInput(nextValue);
-      if (modalMode === "edit") {
-        const nextSnapshot = serializeTaskDraft(draft, nextValue);
-        setEditSaveStatus(nextSnapshot === lastSavedSnapshot ? "saved" : "dirty");
-      }
+  const updateCommandDraft = useCallback(
+    (updater: (previousDraft: ScheduledCommandDraft) => ScheduledCommandDraft): void => {
+      setCommandDraft((previousCommandDraft) => {
+        const intermediateDraft = updater(previousCommandDraft);
+        const previousInput = getCommandInputValue(previousCommandDraft);
+        const nextInput = getCommandInputValue(intermediateDraft);
+
+        let nextCommandDraft = intermediateDraft;
+
+        if (nextInput !== previousInput) {
+          nextCommandDraft = applyCommandInputChange(
+            previousCommandDraft,
+            nextInput,
+            customActions,
+            actionRunner,
+          );
+          nextCommandDraft = {
+            ...nextCommandDraft,
+            verbose: intermediateDraft.verbose,
+            actionArgs:
+              nextCommandDraft.kind === "customActionAlias" &&
+              nextCommandDraft.actionName === previousCommandDraft.actionName
+                ? intermediateDraft.actionArgs
+                : nextCommandDraft.actionArgs,
+          };
+        } else if (
+          intermediateDraft.kind === "customActionAlias" &&
+          intermediateDraft.alias.trim()
+        ) {
+          nextCommandDraft = applyAliasSelection(
+            intermediateDraft,
+            intermediateDraft.alias,
+            customActions,
+            actionRunner,
+          );
+          nextCommandDraft = {
+            ...nextCommandDraft,
+            verbose: intermediateDraft.verbose,
+            actionArgs: intermediateDraft.actionArgs,
+          };
+        }
+
+        applyCommandDraftUpdate(nextCommandDraft);
+        return nextCommandDraft;
+      });
     },
-    [draft, lastSavedSnapshot, modalMode]
+    [actionRunner, applyCommandDraftUpdate, customActions],
   );
 
   const persistDraft = useCallback(async (): Promise<void> => {
@@ -114,12 +215,7 @@ export function useScheduledTaskEditor({
     }
 
     try {
-      const payload: ScheduledTaskInput = {
-        ...draft,
-        triggerTimes: parseTriggerTimes(triggerTimesInput),
-      };
-
-      await window.api.scheduledTasks.save(payload);
+      await window.api.scheduledTasks.save(draft);
       await refreshScheduledTasks();
 
       if (modalMode === "create") {
@@ -127,8 +223,7 @@ export function useScheduledTaskEditor({
         return;
       }
 
-      const savedSnapshot = serializeTaskDraft(payload, triggerTimesInput);
-      setDraft(payload);
+      const savedSnapshot = serializeTaskDraft(draft);
       setLastSavedSnapshot(savedSnapshot);
       setEditSaveStatus("saved");
     } catch (error) {
@@ -140,7 +235,7 @@ export function useScheduledTaskEditor({
     } finally {
       setIsSaving(false);
     }
-  }, [closeModal, draft, modalMode, refreshScheduledTasks, triggerTimesInput]);
+  }, [closeModal, draft, modalMode, refreshScheduledTasks]);
 
   useEffect(() => {
     if (modalMode !== "edit" || editSaveStatus !== "dirty" || isSaving) {
@@ -154,18 +249,19 @@ export function useScheduledTaskEditor({
     return () => {
       window.clearTimeout(saveTimeout);
     };
-  }, [modalMode, editSaveStatus, isSaving, draft, triggerTimesInput, persistDraft]);
+  }, [modalMode, editSaveStatus, isSaving, draft, persistDraft]);
 
   const saveButtonLabel = useMemo(
     () => getSaveButtonLabel(modalMode, editSaveStatus, isSaving),
-    [editSaveStatus, isSaving, modalMode]
+    [editSaveStatus, isSaving, modalMode],
   );
 
   return {
     modalMode,
     isSaving,
     draft,
-    triggerTimesInput,
+    commandDraft,
+    argumentSchema,
     errorMessage,
     editSaveStatus,
     saveButtonLabel,
@@ -175,6 +271,6 @@ export function useScheduledTaskEditor({
     persistDraft,
     setErrorMessage,
     updateDraft,
-    updateTriggerTimesInput,
+    updateCommandDraft,
   };
 }
