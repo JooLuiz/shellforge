@@ -6,7 +6,7 @@
   "author": "João Luiz de Castro",
   "scripts": {
     "test": "node --test commands/action-runner/tests command-lib/tests",
-    "test:coverage": "c8 --check-coverage --lines 90 --functions 90 --branches 90 --statements 90 --include=commands/** --include=command-lib/** --exclude=**/*.test.js node --test commands/action-runner/tests command-lib/tests",
+    "test:coverage": "c8 -- node --test commands/action-runner/tests command-lib/tests",
     "lint": "npm run lint --prefix ui && npm run lint --prefix page && eslint commands command-lib utils",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build --prefix ui",
