@@ -1,14 +1,29 @@
 {
-  "name": "windows-custom-commands",
-  "version": "0.1.5",
-  "description": "custom windows powershell commands",
+  "name": "shellforge",
+  "version": "1.0.0",
+  "description": "ShellForge - custom Windows PowerShell automation and commands",
   "license": "ISC",
   "author": "João Luiz de Castro",
   "scripts": {
-    "test": "node --test action-runner/tests"
+    "test": "node scripts/run-core-tests.mjs",
+    "test:coverage": "c8 node scripts/run-core-tests.mjs",
+    "lint": "npm run lint --prefix ui && npm run lint --prefix page && eslint commands command-lib utils",
+    "ui:dev": "npm run dev --prefix ui",
+    "ui:build": "npm run build --prefix ui",
+    "ui:dist": "npm run dist:full --prefix ui",
+    "ui:test": "npm run test --prefix ui",
+    "page:dev": "npm run dev --prefix page",
+    "page:build": "npm run build --prefix page",
+    "page:lint": "npm run lint --prefix page"
   },
   "dependencies": {
     "puppeteer": "^22.9.0",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "c8": "^10.1.3",
+    "eslint": "^10.4.1",
+    "globals": "^17.6.0"
   }
 }

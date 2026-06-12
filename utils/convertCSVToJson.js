@@ -33,14 +33,14 @@ function convertCSVToJson(filePath, isVerbose, separator = ",") {
 
       const rows = data.trim().split("\n");
 
-      let headers = rows[0].split(`\"${separator}\"`);
+      let headers = rows[0].split(`"${separator}"`);
 
       const objs = rows.slice(1).map((row, rowIndex) => {
         if (rowIndex === rows.length - 2) {
           return;
         }
 
-        const values = row.split(`\"${separator}\"`);
+        const values = row.split(`"${separator}"`);
 
         const obj = mountJsonObj(headers, values)
 

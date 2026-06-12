@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="shellForgeMarkTitle shellForgeMarkDescription">
+  <title id="shellForgeMarkTitle">ShellForge Mark</title>
+  <desc id="shellForgeMarkDescription">Minimal shell prompt with forging hammer and anvil.</desc>
+
+  <rect width="256" height="256" rx="44" fill="#2F3443" />
+
+  <!-- Hammer (flat silhouette, no strokes) -->
+  <g transform="translate(155 90) rotate(47)">
+    <rect x="-85" y="-8" width="85" height="16" rx="2" fill="#8B96A6" />
+    <rect x="-8" y="-39" width="44" height="78" rx="2" fill="#B4BDCA" />
+  </g>
+
+  <!-- Shell chevron -->
+  <path fill="#FFFFFF" d="M30 56 L70 99 L30 142 L44 142 L84 99 L44 56 Z" />
+
+  <!-- Shell underscore -->
+  <rect x="70" y="146" width="130" height="8" rx="2" fill="#FFFFFF" />
+
+  <!-- Anvil top slab + horn -->
+  <path fill="#8B96A6" d="M70 160 H200 L234 176 L200 192 H70 Z" />
+
+  <!-- Heel step where face meets horn -->
+  <path fill="#758095" d="M196 166 H210 V174 H196 Z" />
+
+  <!-- Anvil waist -->
+  <path fill="#8B96A6" d="M102 192 H168 L154 214 H116 Z" />
+
+  <!-- Anvil base -->
+  <rect x="70" y="212" width="132" height="20" rx="2" fill="#8B96A6" />
+</svg>

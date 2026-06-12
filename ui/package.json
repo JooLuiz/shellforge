@@ -1,0 +1,87 @@
+{
+  "name": "shellforge-ui",
+  "version": "1.0.0",
+  "description": "ShellForge desktop manager for Windows PowerShell automation",
+  "author": "João Luiz de Castro",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "prepare:runtime": "node scripts/prepare-runtime-bundle.mjs",
+    "dist": "npm run build && electron-builder --win nsis",
+    "dist:full": "npm run prepare:runtime && npm run dist",
+    "test": "vitest run --coverage",
+    "lint": "eslint .",
+    "generate:icons": "node scripts/generate-app-icons.mjs"
+  },
+  "dependencies": {
+    "dagre": "^0.8.5",
+    "js-pretty-icons": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4",
+    "shellforge": "file:.."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.18",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.5.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "electron": "^31.7.7",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "happy-dom": "^20.10.2",
+    "sharp": "^0.34.3",
+    "to-ico": "^1.1.5",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^5.4.19",
+    "vitest": "^2.1.9"
+  },
+  "build": {
+    "appId": "com.joolu.shellforge",
+    "productName": "ShellForge",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime-bundle",
+        "to": "shellforge-runtime",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "resources/icons/shell-forge-mark.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ShellForge",
+      "artifactName": "ShellForge-Setup.${ext}"
+    }
+  }
+}

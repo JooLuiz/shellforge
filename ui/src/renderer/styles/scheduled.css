@@ -1,0 +1,298 @@
+.weekdays-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: start;
+  gap: 8px;
+}
+
+.weekdays-grid .inline-field {
+  justify-content: flex-start;
+}
+
+.weekdays-grid .inline-field input {
+  width: auto;
+}
+
+.scheduled-modal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.scheduled-modal-left,
+.scheduled-modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduled-modal-right {
+  border-left: 2px dashed var(--color-border-dashed);
+  padding-left: 16px;
+}
+
+.scheduled-task-command-field {
+  position: relative;
+  width: 100%;
+}
+
+.scheduled-task-command-field-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.scheduled-task-command-field-input {
+  width: 100%;
+  box-sizing: border-box;
+  appearance: none;
+  padding-right: 36px;
+}
+
+.scheduled-task-command-field-chevron {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-icon);
+}
+
+.scheduled-task-command-field-chevron:hover {
+  color: var(--color-text-icon-hover);
+}
+
+.scheduled-task-command-picker {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  background: var(--color-bg-dropdown);
+  box-shadow: var(--color-shadow-dropdown);
+  max-height: calc((12px + 1.375em) * 4 + 8px);
+  overflow-y: auto;
+}
+
+.scheduled-task-command-picker-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 6px 10px;
+  font: inherit;
+  color: var(--color-text-active-breadcrumb);
+  cursor: pointer;
+}
+
+.scheduled-task-command-picker-option:hover {
+  background: var(--color-bg-hover);
+}
+
+.scheduled-trigger-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.scheduled-trigger-time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--color-border-chip);
+  border-radius: 999px;
+  background: var(--color-bg-chip);
+  padding: 2px 4px 2px 10px;
+}
+
+.scheduled-trigger-time-chip-label {
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font: inherit;
+  color: var(--color-text-active-breadcrumb);
+  cursor: pointer;
+}
+
+.scheduled-trigger-time-chip-label:hover {
+  color: var(--color-text-chip-hover);
+}
+
+.scheduled-trigger-time-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-chip-remove);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scheduled-trigger-time-chip-remove:hover {
+  background: #f8e8eb;
+}
+
+.scheduled-trigger-time-add {
+  min-width: 36px;
+  padding: 6px 10px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.scheduled-trigger-times-hint {
+  margin: 6px 0 0;
+  color: var(--color-text-status);
+  font-size: 14px;
+}
+
+.trigger-time-picker-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-backdrop--nested {
+  z-index: 210;
+}
+
+.modal--compact {
+  width: min(360px, 92vw);
+}
+
+.modal--compact .modal-header h3 {
+  font-size: 28px;
+}
+
+.trigger-time-option-picker {
+  position: relative;
+  width: 100%;
+}
+
+.trigger-time-option-picker-trigger {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger-time-option-picker-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  background: var(--color-bg-dropdown);
+  box-shadow: var(--color-shadow-dropdown);
+  max-height: calc((12px + 1.375em) * 12 + 8px);
+  overflow-y: auto;
+}
+
+.trigger-time-option-picker-list--floating {
+  position: fixed;
+  top: auto;
+  left: auto;
+  right: auto;
+  z-index: 220;
+}
+
+.scheduled-task-command-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduled-task-command-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scheduled-task-command-row-controls .scheduled-task-command-field {
+  flex: 0 0 75%;
+  max-width: 75%;
+  min-width: 0;
+}
+
+.scheduled-task-command-row-controls .scheduled-task-verbose-toggle {
+  margin-left: auto;
+}
+
+.scheduled-task-verbose-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.scheduled-task-verbose-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .scheduled-task-command-row-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scheduled-task-command-row-controls .scheduled-task-command-field {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  .scheduled-task-command-row-controls .scheduled-task-verbose-toggle {
+    align-self: flex-end;
+    margin-left: 0;
+  }
+}
+
+.scheduled-task-action-args {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scheduled-task-arg-field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.scheduled-task-command-preview-code {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--color-bg-example);
+  color: var(--color-text-example);
+  font-family: Consolas, "Cascadia Code", monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.scheduled-task-row-metadata {
+  margin-top: 4px;
+}

@@ -1,0 +1,51 @@
+.list-editor,
+.object-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-editor-row,
+.object-editor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.list-editor-row .interpolated-string-field,
+.object-editor-row .interpolated-string-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.object-editor-row {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) auto;
+}
+
+.object-editor-row--required {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+}
+
+.object-editor-key--locked {
+  background: var(--color-bg-locked);
+  color: var(--color-text-locked);
+  cursor: not-allowed;
+}
+
+.json-field-error {
+  color: var(--color-text-error);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.label-caption {
+  color: var(--color-text-status);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.status-text {
+  font-size: 20px;
+  color: var(--color-text-status);
+}
