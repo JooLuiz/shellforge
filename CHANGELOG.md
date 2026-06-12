@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-06-12
+
+### Fixed
+
+- First packaged app launch sets User `SHELLFORGE_USER_DATA` to `%APPDATA%/ShellForge/shellforge-data/` when not already defined, aligning CLI with the desktop app.
+- CLI user-data resolution falls back to the AppData path for packaged installs when the runtime install dir has no config, even before `config.json` exists.
+
 ## [1.0.3] - 2026-06-12
 
 ### Fixed
