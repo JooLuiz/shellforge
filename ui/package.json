@@ -50,7 +50,7 @@
     "vitest": "^2.1.9"
   },
   "build": {
-    "appId": "com.joolu.shellforge",
+    "appId": "app.shellforge",
     "productName": "ShellForge",
     "directories": {
       "output": "dist",

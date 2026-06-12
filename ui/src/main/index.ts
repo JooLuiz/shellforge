@@ -16,7 +16,7 @@ import { ensurePackagedUserData } from "./services/packagedDataBootstrap";
 
 configurePackagedUserDataPath();
 
-const WINDOWS_APP_USER_MODEL_ID = "com.joolu.shellforge";
+const WINDOWS_APP_USER_MODEL_ID = "app.shellforge";
 
 let mainBrowserWindow: BrowserWindow | null = null;
 
