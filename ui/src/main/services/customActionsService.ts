@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import path from "node:path";
 import type { RunCustomActionInput, RunCustomActionResult } from "../../shared/types";
 import { readConfig } from "./configService";
 import { getRepoPaths, resolvePredefinedCommandBatPath } from "./repoPaths";
@@ -24,6 +25,7 @@ export async function runCustomAction(input: RunCustomActionInput): Promise<RunC
 
   const { userDataRoot } = getRepoPaths();
   const actionRunnerBatPath = resolvePredefinedCommandBatPath("action-runner");
+  const actionRunnerWorkingDirectory = path.dirname(actionRunnerBatPath);
   const args = buildCliArgs({
     actionName,
     args: input.args,
@@ -31,7 +33,7 @@ export async function runCustomAction(input: RunCustomActionInput): Promise<RunC
 
   const executionResult = await new Promise<RunCustomActionResult>((resolve, reject) => {
     const childProcess = spawn(actionRunnerBatPath, args, {
-      cwd: userDataRoot,
+      cwd: actionRunnerWorkingDirectory,
       shell: true,
       windowsHide: true,
       env: {

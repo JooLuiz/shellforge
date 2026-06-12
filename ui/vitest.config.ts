@@ -19,7 +19,6 @@ const coverageExclude = [
   "src/main/ipc/browserProfiles.ts",
   "src/main/windowIconPath.ts",
   // Services without direct unit coverage yet
-  "src/main/services/customActionsService.ts",
   "src/main/services/profileBlock.ts",
   "src/main/services/profileHealth.ts",
   "src/main/services/profilePath.ts",

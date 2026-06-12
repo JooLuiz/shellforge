@@ -48,6 +48,8 @@ if not defined hasAction (
   exit /b 1
 )
 
-call "%~dp0..\..\utils\shellforge-node.cmd" %JS_FILE%!normalizedArgs!
+set "NODE_WRAPPER=%~dp0..\..\utils\shellforge-node.cmd"
+for %%I in ("%NODE_WRAPPER%") do set "NODE_WRAPPER=%%~fI"
+call "%NODE_WRAPPER%" %JS_FILE%!normalizedArgs!
 
 exit /b %errorlevel%
