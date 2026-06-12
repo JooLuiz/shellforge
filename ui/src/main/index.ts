@@ -11,7 +11,10 @@ import { registerThemeIpcHandlers } from "./ipc/theme";
 import { registerLocaleIpcHandlers } from "./ipc/locale";
 import { openExternalHttpUrl } from "./openExternalUrl";
 import { resolveWindowIconPath } from "./windowIconPath";
+import { configurePackagedUserDataPath } from "./services/configurePackagedUserDataPath";
 import { ensurePackagedUserData } from "./services/packagedDataBootstrap";
+
+configurePackagedUserDataPath();
 
 const WINDOWS_APP_USER_MODEL_ID = "com.joolu.shellforge";
 

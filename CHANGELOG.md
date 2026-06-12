@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Packaged app **Run Now** for custom actions failed with "path not found" because action-runner was spawned with user-data as the working directory; spawn now uses the action-runner install directory while config still loads from AppData.
 - Hardened `action-runner.bat` to resolve `shellforge-node.cmd` to a fully qualified path before execution (CLI reliability from arbitrary working directories).
+- Packaged user-data path now stores config, scheduled tasks, and browser profiles under `%APPDATA%/ShellForge/shellforge-data/` instead of `%APPDATA%/shellforge-ui/`.
 
 ## [1.0.1] - 2026-06-11
 
