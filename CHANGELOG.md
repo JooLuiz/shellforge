@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Packaged user-data path now stores config, scheduled tasks, and browser profiles under `%APPDATA%/ShellForge/shellforge-data/` instead of `%APPDATA%/shellforge-ui/`.
 - Scheduled Tasks tab now warns and disables ON/OFF toggles when ShellForge is not running as Administrator; toggle/save sync failures due to missing elevation are surfaced instead of failing silently.
 - Scheduled task names are restricted to ASCII letters, numbers, spaces, hyphens, and underscores; invalid names show row/modal validation errors, toggles are disabled, and enable failures surface explicit registration errors instead of silently staying off.
+- Docs site mobile layout: sticky header with menu drawer, no page-level horizontal scroll, compact content blocks, and js-pretty-icons sun/moon theme toggle.
 
 ## [1.0.1] - 2026-06-11
 
