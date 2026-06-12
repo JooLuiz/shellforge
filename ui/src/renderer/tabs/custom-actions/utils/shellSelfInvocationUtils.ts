@@ -1,4 +1,4 @@
-import type { ActionStep, AppConfig } from "../../../../shared/types";
+import type { ActionStep } from "../../../../shared/types";
 import type { ActionEditorDraft } from "../types";
 
 const INTERPOLATION_ONLY_REGEX = /^\{\{\s*(context|env)\.[^}]+\s*\}\}$/;
@@ -49,10 +49,7 @@ export function collectShellCommandTexts(step: ActionStep): string[] {
   return shellTexts;
 }
 
-export function buildSelfInvocationTokens(
-  draft: ActionEditorDraft,
-  _config: AppConfig,
-): string[] {
+export function buildSelfInvocationTokens(draft: ActionEditorDraft): string[] {
   const actionName = draft.actionName.trim();
   const tokens: string[] = [];
 

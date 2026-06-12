@@ -32,7 +32,7 @@ describe("collectShellCommandTexts", () => {
 
 describe("buildSelfInvocationTokens", () => {
   it("includes action name and draft aliases when availableOnCLI", () => {
-    const tokens = buildSelfInvocationTokens(createDraft(), {} as never);
+    const tokens = buildSelfInvocationTokens(createDraft());
     expect(tokens).toEqual(["MyAction", "my-alias"]);
   });
 
@@ -41,7 +41,6 @@ describe("buildSelfInvocationTokens", () => {
       createDraft({
         customActionUi: { availableOnCLI: false, aliases: ["my-alias"] },
       }),
-      {} as never,
     );
     expect(tokens).toEqual(["MyAction"]);
   });

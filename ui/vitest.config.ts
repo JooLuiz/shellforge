@@ -42,7 +42,7 @@ const coverageExclude = [
   "src/renderer/tabs/custom-actions/hooks/useFlowEditorViewport.ts",
   "src/renderer/tabs/custom-actions/hooks/useRunActionModal.ts",
   "src/renderer/tabs/custom-actions/utils/buildBlockFlow.ts",
-  "src/renderer/tabs/custom-actions/utils/flow.tsx",
+  "src/renderer/tabs/custom-actions/utils/flow.ts",
   "src/renderer/tabs/custom-actions/utils/flowLayout.ts",
   "src/renderer/tabs/custom-actions/utils/flowShiftScrollPan.ts",
   "src/renderer/tabs/custom-actions/utils/flowScope.ts",

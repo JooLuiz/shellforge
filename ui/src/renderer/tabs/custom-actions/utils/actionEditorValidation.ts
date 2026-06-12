@@ -170,7 +170,7 @@ function validateSelfInvocation(
   }
 
   if (step.action === "shell") {
-    const selfInvocationTokens = buildSelfInvocationTokens(draft, config);
+    const selfInvocationTokens = buildSelfInvocationTokens(draft);
 
     if (shellStepInvokesSelf(step, selfInvocationTokens)) {
       return [

@@ -9,10 +9,6 @@
 
 const VALID_OPERATORS = new Set(["eq", "gt", "gte", "lt", "lte", "exists"]);
 
-function isFiniteNumber(value) {
-  return typeof value === "number" && Number.isFinite(value);
-}
-
 function coerceComparablePair(leftValue, rightValue) {
   const leftAsNumber = Number(leftValue);
   const rightAsNumber = Number(rightValue);

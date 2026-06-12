@@ -12,4 +12,16 @@ export default defineConfig([
       sourceType: "commonjs",
     },
   },
+  {
+    files: [
+      "commands/**/pageContext.js",
+      "commands/**/browserHandlers/**/*.js",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+  },
 ]);

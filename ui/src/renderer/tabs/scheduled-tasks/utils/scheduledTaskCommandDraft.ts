@@ -5,7 +5,6 @@ import {
   buildAliasToActionMap,
   composeScheduledTaskCommand,
   createInitialActionArgs,
-  getCommandInputValue,
   parseScheduledCommandDraft,
   type ScheduledCommandDraft,
 } from "../../../../shared/scheduledTaskCommand";

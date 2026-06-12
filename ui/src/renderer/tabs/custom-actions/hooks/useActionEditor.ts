@@ -174,7 +174,6 @@ export function useActionEditor({
     editorOriginalActionName,
     editorSaveStatus,
     isSavingEditor,
-    lastSavedSnapshot,
     onSave,
     setEditorDraft,
     setEditorErrorMessage,

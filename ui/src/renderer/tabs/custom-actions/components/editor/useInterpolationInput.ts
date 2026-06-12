@@ -15,11 +15,7 @@ interface UseInterpolationInputResult {
   suggestionsOpen: boolean;
   filteredSuggestions: string[];
   highlightedSuggestionIndex: number;
-  handleInputChange: (
-    nextValue: string,
-    cursorPosition: number,
-    inputElement: HTMLInputElement | HTMLTextAreaElement,
-  ) => void;
+  handleInputChange: (nextValue: string, cursorPosition: number) => void;
   handleKeyDown: (
     event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => boolean;
@@ -81,11 +77,7 @@ export function useInterpolationInput({
   );
 
   const handleInputChange = useCallback(
-    (
-      nextValue: string,
-      cursorPosition: number,
-      _inputElement: HTMLInputElement | HTMLTextAreaElement,
-    ): void => {
+    (nextValue: string, cursorPosition: number): void => {
       onChange(nextValue);
 
       const activeToken = findActiveContextToken(nextValue.slice(0, cursorPosition));

@@ -26,7 +26,6 @@ interface UseEditorPersistenceInput {
   editorOriginalActionName: string | null;
   editorSaveStatus: EditSaveStatus;
   isSavingEditor: boolean;
-  lastSavedSnapshot: string;
   onSave: (nextConfig: AppConfig) => Promise<void>;
   setEditorDraft: Dispatch<SetStateAction<ActionEditorDraft | null>>;
   setEditorErrorMessage: (message: string | null) => void;
@@ -50,7 +49,6 @@ export function useEditorPersistence({
   editorOriginalActionName,
   editorSaveStatus,
   isSavingEditor,
-  lastSavedSnapshot,
   onSave,
   setEditorDraft,
   setEditorErrorMessage,

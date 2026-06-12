@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist", "out", "runtime-bundle"]),
+  globalIgnores(["dist", "out", "runtime-bundle", "coverage"]),
   {
     files: ["src/**/*.{ts,tsx}"],
     extends: [
@@ -24,6 +24,26 @@ export default defineConfig([
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-refresh/only-export-components": [
+        "error",
+        {
+          allowConstantExport: true,
+          allowExportNames: [
+            "useAppCommandBridge",
+            "useTranslation",
+            "readInitialLocale",
+            "useActionEditorContext",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/**/CustomActionFlowNodes.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 ]);

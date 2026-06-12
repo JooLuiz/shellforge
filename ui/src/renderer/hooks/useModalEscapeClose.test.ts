@@ -66,13 +66,13 @@ describe("useModalEscapeClose", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
-    vi.spyOn(window, "addEventListener").mockImplementation((type, listener, _options) => {
+    vi.spyOn(window, "addEventListener").mockImplementation((type, listener) => {
       if (type === "keydown" && typeof listener === "function") {
         keydownListeners.push(listener as (event: KeyboardEvent) => void);
       }
     });
 
-    vi.spyOn(window, "removeEventListener").mockImplementation((type, listener, _options) => {
+    vi.spyOn(window, "removeEventListener").mockImplementation((type, listener) => {
       if (type === "keydown" && typeof listener === "function") {
         keydownListeners = keydownListeners.filter((registeredListener) => registeredListener !== listener);
       }

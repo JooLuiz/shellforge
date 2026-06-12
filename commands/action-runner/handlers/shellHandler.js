@@ -111,8 +111,11 @@ async function handleShell(_resources, step, logInfo, runtimeContext) {
       return null;
     }
 
-    const errorMessage = executionError.error?.message ?? "Unknown shell execution error";
-    throw new Error(`[Action Runner] Shell command failed: ${errorMessage}`);
+    const shellError = executionError.error;
+    const errorMessage = shellError?.message ?? "Unknown shell execution error";
+    throw new Error(`[Action Runner] Shell command failed: ${errorMessage}`, {
+      cause: executionError,
+    });
   }
 }
 

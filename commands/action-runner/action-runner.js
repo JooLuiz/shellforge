@@ -166,7 +166,8 @@ function ensureBrowserProfileDirectoryExists(browserLaunchOverrides) {
     fs.mkdirSync(browserLaunchOverrides.userDataDir, { recursive: true });
   } catch (error) {
     throw new Error(
-      `[Action Runner] Failed to create browser profile directory "${browserLaunchOverrides.userDataDir}": ${toErrorMessage(error)}`
+      `[Action Runner] Failed to create browser profile directory "${browserLaunchOverrides.userDataDir}": ${toErrorMessage(error)}`,
+      { cause: error },
     );
   }
 }
@@ -193,7 +194,8 @@ function createResources(
         );
       } catch (error) {
         throw new Error(
-          `[Action Runner] Failed to initialize browser. ${toErrorMessage(error)}`
+          `[Action Runner] Failed to initialize browser. ${toErrorMessage(error)}`,
+          { cause: error },
         );
       }
       pageInstance = null;

@@ -106,7 +106,6 @@ export function InterpolatedStringField({
             handleInputChange(
               event.target.value,
               event.target.selectionStart ?? value.length,
-              event.target,
             );
             if (event.target.value.trim().length > 0) {
               closePicker();

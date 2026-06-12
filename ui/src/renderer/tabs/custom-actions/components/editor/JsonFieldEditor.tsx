@@ -127,7 +127,6 @@ export function JsonFieldEditor({
               handleInputChange(
                 nextRawValue,
                 event.target.selectionStart ?? nextRawValue.length,
-                event.target,
               );
               return;
             }
