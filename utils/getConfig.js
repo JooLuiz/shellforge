@@ -11,18 +11,20 @@ function hasConfigAtRoot(rootPath) {
   return fs.existsSync(configPath);
 }
 
-function resolveUserDataRoot() {
-  const envUserDataRoot = process.env.SHELLFORGE_USER_DATA;
+function resolveUserDataRootFromInputs({
+  envUserDataRoot,
+  runtimeRoot,
+  appDataPath,
+}) {
   if (typeof envUserDataRoot === "string" && envUserDataRoot.trim().length > 0) {
     return path.resolve(envUserDataRoot.trim());
   }
 
-  const runtimeRoot = getRuntimeRoot();
-  if (hasConfigAtRoot(runtimeRoot)) {
-    return runtimeRoot;
+  const resolvedRuntimeRoot = path.resolve(runtimeRoot);
+  if (hasConfigAtRoot(resolvedRuntimeRoot)) {
+    return resolvedRuntimeRoot;
   }
 
-  const appDataPath = process.env.APPDATA;
   if (typeof appDataPath === "string" && appDataPath.trim().length > 0) {
     const packagedUserDataRoot = getPackagedUserDataRoot(appDataPath.trim());
     if (hasConfigAtRoot(packagedUserDataRoot)) {
@@ -30,7 +32,15 @@ function resolveUserDataRoot() {
     }
   }
 
-  return runtimeRoot;
+  return resolvedRuntimeRoot;
+}
+
+function resolveUserDataRoot() {
+  return resolveUserDataRootFromInputs({
+    envUserDataRoot: process.env.SHELLFORGE_USER_DATA,
+    runtimeRoot: getRuntimeRoot(),
+    appDataPath: process.env.APPDATA,
+  });
 }
 
 function readConfigFile(configPath) {
@@ -49,4 +59,5 @@ async function getConfigs() {
 module.exports = {
   getConfigs,
   resolveUserDataRoot,
+  resolveUserDataRootFromInputs,
 };
