@@ -38,6 +38,8 @@ export const en: TranslationDictionary = {
     categoryTiming: "Timing",
     categoryData: "Data & I/O",
     categoryControlFlow: "Control flow",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
   },
   home: {
     tag: "ShellForge",

@@ -30,10 +30,7 @@ const App = () => {
 
   return (
     <I18nProvider>
-      <Layout
-        theme={theme}
-        onToggleTheme={() => setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"))}
-      >
+      <Layout theme={theme} setTheme={setTheme}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/getting-started" element={<GettingStartedPage />} />

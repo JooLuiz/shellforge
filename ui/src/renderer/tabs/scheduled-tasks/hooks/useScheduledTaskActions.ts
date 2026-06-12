@@ -1,8 +1,15 @@
 import { useCallback, useState } from "react";
+import { mapScheduledTaskToggleErrorMessage } from "../utils/scheduledTaskToggleErrors";
 
 interface UseScheduledTaskActionsInput {
   refreshScheduledTasks: () => Promise<void>;
   setErrorMessage: (message: string | null) => void;
+  toggleErrorMessages: {
+    adminRequiredErrorMessage: string;
+    invalidActionNameMessage: string;
+    toggleFailedMessage: string;
+    toggleRegistrationFailedMessage: string;
+  };
 }
 
 interface UseScheduledTaskActionsResult {
@@ -15,6 +22,7 @@ interface UseScheduledTaskActionsResult {
 export function useScheduledTaskActions({
   refreshScheduledTasks,
   setErrorMessage,
+  toggleErrorMessages,
 }: UseScheduledTaskActionsInput): UseScheduledTaskActionsResult {
   const [togglingTaskNames, setTogglingTaskNames] = useState<string[]>([]);
 
@@ -47,14 +55,14 @@ export function useScheduledTaskActions({
         await refreshScheduledTasks();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown toggle error";
-        setErrorMessage(message);
+        setErrorMessage(mapScheduledTaskToggleErrorMessage(message, toggleErrorMessages));
       } finally {
         setTogglingTaskNames((previousTaskNames) =>
           previousTaskNames.filter((taskName) => taskName !== fileName)
         );
       }
     },
-    [refreshScheduledTasks, setErrorMessage]
+    [refreshScheduledTasks, setErrorMessage, toggleErrorMessages],
   );
 
   return {

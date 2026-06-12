@@ -75,6 +75,7 @@ export interface ScheduledTaskRecord {
   commandMetadata?: ScheduledTaskCommandMetadata;
   isEnabled: boolean;
   parseError?: string;
+  actionNameError?: string;
 }
 
 export interface ScheduledTaskInput {
@@ -115,6 +116,10 @@ export interface ActionRuntimeVariableContext {
   warnings: ContextValidationWarning[];
 }
 
+export interface ScheduledTaskPrivilegesStatus {
+  isAdministrator: boolean;
+}
+
 export interface AppApi {
   config: {
     read: () => Promise<AppConfig>;
@@ -130,6 +135,7 @@ export interface AppApi {
     save: (input: ScheduledTaskInput) => Promise<string>;
     delete: (fileName: string) => Promise<void>;
     toggle: (fileName: string, isEnabled: boolean) => Promise<void>;
+    getPrivileges: () => Promise<ScheduledTaskPrivilegesStatus>;
   };
   customActions: {
     run: (input: RunCustomActionInput) => Promise<RunCustomActionResult>;

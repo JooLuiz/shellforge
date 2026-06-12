@@ -2,6 +2,8 @@ import type { ScheduledTaskRecord } from "../../../../shared/types";
 import { formatWeekdays } from "../utils";
 
 interface ScheduledTaskRowProps {
+  canManageTasks: boolean;
+  invalidActionNameMessage: string;
   isToggling: boolean;
   onEdit: (task: ScheduledTaskRecord) => void;
   onRequestRemove: (fileName: string, displayName: string) => void;
@@ -10,12 +12,16 @@ interface ScheduledTaskRowProps {
 }
 
 export function ScheduledTaskRow({
+  canManageTasks,
+  invalidActionNameMessage,
   isToggling,
   onEdit,
   onRequestRemove,
   onToggle,
   task,
 }: ScheduledTaskRowProps): JSX.Element {
+  const canToggleTask = canManageTasks && !task.parseError && !task.actionNameError;
+
   return (
     <article className="list-row">
       <h3 className="list-row-title">{task.actionName}</h3>
@@ -42,7 +48,7 @@ export function ScheduledTaskRow({
             <input
               type="checkbox"
               checked={task.isEnabled}
-              disabled={isToggling}
+              disabled={isToggling || !canToggleTask}
               onChange={(event) =>
                 void onToggle(task.fileName, event.target.checked)
               }
@@ -73,6 +79,9 @@ export function ScheduledTaskRow({
           ) : null}
           {task.parseError ? (
             <div className="error-banner">{task.parseError}</div>
+          ) : null}
+          {task.actionNameError ? (
+            <div className="error-banner">{invalidActionNameMessage}</div>
           ) : null}
         </div>
         <div className="row-right-bottom scheduled-task-row-bottom-right">

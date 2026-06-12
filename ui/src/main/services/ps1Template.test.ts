@@ -16,6 +16,9 @@ describe("ps1Template", () => {
 
     expect(scriptContent).toContain("# managed by ShellForge UI");
     expect(scriptContent).toContain('$TaskName = "MeuComando"');
+    expect(scriptContent).toContain("$ErrorActionPreference = 'Stop'");
+    expect(scriptContent).toContain("try {");
+    expect(scriptContent).toContain("exit 1");
     expect(scriptContent).toContain('$triggerTimes = @("08:00", "17:00")');
     expect(scriptContent).toContain("[System.DayOfWeek]::Monday");
     expect(scriptContent).toContain("[System.DayOfWeek]::Friday");

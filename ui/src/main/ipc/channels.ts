@@ -8,6 +8,7 @@ export const IPC_CHANNELS = {
   scheduledTasksSave: "scheduledTasks:save",
   scheduledTasksDelete: "scheduledTasks:delete",
   scheduledTasksToggle: "scheduledTasks:toggle",
+  scheduledTasksPrivileges: "scheduledTasks:privileges",
   customActionsRun: "customActions:run",
   browserProfilesList: "browserProfiles:list",
   themeSet: "theme:set",

@@ -1,6 +1,6 @@
 {
   "name": "shellforge-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ShellForge desktop manager for Windows PowerShell automation",
   "author": "João Luiz de Castro",
   "private": true,
@@ -50,7 +50,7 @@
     "vitest": "^2.1.9"
   },
   "build": {
-    "appId": "com.joolu.shellforge",
+    "appId": "app.shellforge",
     "productName": "ShellForge",
     "directories": {
       "output": "dist",

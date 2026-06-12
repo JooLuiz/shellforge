@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { Locale } from "../shared/i18n/types";
 import type { ThemeMode } from "../shared/themeBridge";
-import type { AppApi, AppConfig, RunCustomActionInput, ScheduledTaskInput } from "../shared/types";
+import type { AppApi, AppConfig, RunCustomActionInput, ScheduledTaskInput, ScheduledTaskPrivilegesStatus } from "../shared/types";
 import { IPC_CHANNELS } from "../main/ipc/channels";
 import { isLocale } from "../shared/i18n";
 
@@ -39,6 +39,8 @@ const api: AppApi = {
       ipcRenderer.invoke(IPC_CHANNELS.scheduledTasksDelete, fileName),
     toggle: async (fileName: string, isEnabled: boolean) =>
       ipcRenderer.invoke(IPC_CHANNELS.scheduledTasksToggle, fileName, isEnabled),
+    getPrivileges: async (): Promise<ScheduledTaskPrivilegesStatus> =>
+      ipcRenderer.invoke(IPC_CHANNELS.scheduledTasksPrivileges),
   },
   customActions: {
     run: async (input: RunCustomActionInput) => ipcRenderer.invoke(IPC_CHANNELS.customActionsRun, input),

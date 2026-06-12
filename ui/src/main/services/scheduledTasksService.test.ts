@@ -51,6 +51,8 @@ const BASE_TASK_INPUT: ScheduledTaskInput = {
   command: "bater-ponto",
 };
 
+const SUCCESS_OUTPUT = "[SUCCESS] - Scheduled task 'BaterPonto' created successfully!\r\n";
+
 describe("scheduledTasksService", () => {
   const execFileMock = vi.mocked(execFile);
   const execFileSyncMock = vi.mocked(execFileSync);
@@ -89,7 +91,16 @@ describe("scheduledTasksService", () => {
       scheduledTasksDir: "C:\\repo\\scheduled-tasks",
     });
     existsSyncMock.mockReturnValue(true);
-    execFileSyncMock.mockImplementation(() => "");
+    execFileSyncMock.mockImplementation(() => SUCCESS_OUTPUT);
+    readFileSyncMock.mockReturnValue("$TaskName = \"BaterPonto\"");
+    parseScheduledTaskContentMock.mockReturnValue({
+      fileName: "setup-bater-ponto-task.ps1",
+      actionName: "BaterPonto",
+      triggerTimes: ["08:00"],
+      weekdays: ["Monday"],
+      command: "bater-ponto",
+      isEnabled: false,
+    });
   });
 
   it("builds PowerShell args for both enable and disable flows", () => {
@@ -160,14 +171,83 @@ describe("scheduledTasksService", () => {
     expect(records[0].isEnabled).toBe(false);
   });
 
-  it("throws descriptive errors when toggling fails", () => {
+  it("throws descriptive errors when toggling fails", async () => {
     execFileSyncMock.mockImplementation(() => {
       throw new Error("Access denied");
     });
 
-    expect(() => toggleScheduledTask("setup-bater-ponto-task.ps1", false)).toThrow(
-      'Failed to disable scheduled task from "setup-bater-ponto-task.ps1". Access denied'
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", false)).rejects.toThrow(
+      'Failed to disable scheduled task from "setup-bater-ponto-task.ps1". Access denied',
     );
+  });
+
+  it("throws an administrator error when the script reports missing elevation with exit code 0", async () => {
+    execFileSyncMock.mockReturnValue(
+      "[ERROR] - This script must be run as Administrator. Right-click PowerShell and select 'Run as administrator'.\r\n",
+    );
+
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", true)).rejects.toThrow(
+      "Administrator privileges are required to enable or disable Windows scheduled tasks.",
+    );
+  });
+
+  it("throws an administrator error when the script exits non-zero for missing elevation", async () => {
+    const adminError = Object.assign(new Error("Command failed"), {
+      stdout:
+        "[ERROR] - This script must be run as Administrator. Right-click PowerShell and select 'Run as administrator'.\r\n",
+      stderr: "",
+    });
+    execFileSyncMock.mockImplementation(() => {
+      throw adminError;
+    });
+
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", true)).rejects.toThrow(
+      "Administrator privileges are required to enable or disable Windows scheduled tasks.",
+    );
+  });
+
+  it("throws when enabling without a success marker in script output", async () => {
+    execFileSyncMock.mockReturnValue("[INFO] - nothing happened\r\n");
+
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", true)).rejects.toThrow(
+      "The Windows scheduled task was not registered.",
+    );
+  });
+
+  it("throws when the OS task list does not contain the action after enabling", async () => {
+    execFileSyncMock.mockReturnValue(SUCCESS_OUTPUT);
+    mockExecFileSuccess("SomeOtherTask\r\n");
+
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", true)).rejects.toThrow(
+      "The Windows scheduled task was not registered.",
+    );
+  });
+
+  it("rejects invalid action names when saving", async () => {
+    await expect(
+      saveScheduledTask({
+        ...BASE_TASK_INPUT,
+        actionName: "Lançar Horas",
+      }),
+    ).rejects.toThrow("Task name must use only ASCII letters");
+  });
+
+  it("attaches actionNameError for invalid stored task names", async () => {
+    listScheduledTaskRecordsMock.mockReturnValue([
+      {
+        fileName: "setup-lancar-horas-task.ps1",
+        actionName: "Lançar Horas",
+        triggerTimes: ["08:00"],
+        weekdays: ["Monday"],
+        command: "lancar-horas",
+        isEnabled: false,
+      },
+    ]);
+    mockExecFileSuccess("");
+
+    const records = await listScheduledTasks();
+
+    expect(records[0]?.actionNameError).toContain("ASCII letters");
   });
 
   it("re-registers the OS task when saving an enabled task", async () => {
@@ -187,6 +267,12 @@ describe("scheduledTasksService", () => {
       buildScheduledTaskCommandArgs("C:\\repo\\scheduled-tasks\\setup-bater-ponto-task.ps1", true),
       expect.objectContaining({ encoding: "utf8", stdio: "pipe" }),
     );
+  });
+
+  it("verifies OS registration after enabling during toggle", async () => {
+    mockExecFileSuccess("BaterPonto\r\n");
+
+    await expect(toggleScheduledTask("setup-bater-ponto-task.ps1", true)).resolves.toBeUndefined();
   });
 
   it("writes the script only when the OS task is not registered", async () => {
@@ -249,7 +335,7 @@ describe("scheduledTasksService", () => {
         originalFileName: "setup-bater-ponto-task.ps1",
       }),
     ).rejects.toThrow(
-      "Saved script but failed to update Windows scheduled task. Failed to enable scheduled task",
+      "Saved script but failed to update Windows scheduled task. The Windows scheduled task was not registered. Check the task name and try again.",
     );
   });
 });

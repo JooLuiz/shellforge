@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-06-12
+
+### Fixed
+
+- Packaged app **Run Now** for custom actions failed with "path not found" because action-runner was spawned with user-data as the working directory; spawn now uses the action-runner install directory while config still loads from AppData.
+- Hardened `action-runner.bat` to resolve `shellforge-node.cmd` to a fully qualified path before execution (CLI reliability from arbitrary working directories).
+- Packaged user-data path now stores config, scheduled tasks, and browser profiles under `%APPDATA%/ShellForge/shellforge-data/` instead of `%APPDATA%/shellforge-ui/`.
+- Scheduled Tasks tab now warns and disables ON/OFF toggles when ShellForge is not running as Administrator; toggle/save sync failures due to missing elevation are surfaced instead of failing silently.
+- Scheduled task names are restricted to ASCII letters, numbers, spaces, hyphens, and underscores; invalid names show row/modal validation errors, toggles are disabled, and enable failures surface explicit registration errors instead of silently staying off.
+- Docs site mobile layout: sticky header with menu drawer, no page-level horizontal scroll, compact content blocks, and js-pretty-icons sun/moon theme toggle.
+
+### Changed
+
+- Electron `appId` and Windows App User Model ID updated to `app.shellforge`.
+
 ## [1.0.1] - 2026-06-11
 
 ### Fixed

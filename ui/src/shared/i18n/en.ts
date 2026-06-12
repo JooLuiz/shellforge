@@ -88,6 +88,20 @@ export const enDictionary: AppTranslationDictionary = {
   },
   scheduledTasks: {
     noSearchResults: "No scheduled tasks match the current search.",
+    privileges: {
+      title: "Administrator privileges required",
+      message:
+        "ShellForge cannot enable or disable Windows scheduled tasks while running without administrator privileges.",
+      remediation:
+        "Close ShellForge, then right-click the app shortcut or executable and select Run as administrator.",
+      toggleError:
+        "Administrator privileges are required to enable or disable Windows scheduled tasks. Restart ShellForge as administrator.",
+    },
+    invalidActionName:
+      "Task name must use only ASCII letters, numbers, spaces, hyphens, and underscores.",
+    toggleFailed: "Failed to update the scheduled task. Check the task name and try again.",
+    toggleRegistrationFailed:
+      "The Windows scheduled task was not registered. Rename the task to use ASCII characters only and try again.",
   },
   deleteConfirm: {
     cancel: "Cancel",

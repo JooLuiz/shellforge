@@ -1,6 +1,7 @@
 import { PREDEFINED_COMMAND_DEFINITIONS } from "../../shared/predefinedCommandsRegistry";
 
 export const PACKAGED_RUNTIME_RESOURCE_DIR = "shellforge-runtime";
+export const SHELLFORGE_APP_DATA_DIR_NAME = "ShellForge";
 export const USER_DATA_REPO_DIR_NAME = "shellforge-data";
 export const SHELLFORGE_RUNTIME_VERSION_FILE = "SHELLFORGE_RUNTIME_VERSION";
 

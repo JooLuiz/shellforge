@@ -39,6 +39,8 @@ export interface TranslationDictionary {
     categoryTiming: string;
     categoryData: string;
     categoryControlFlow: string;
+    openMenu: string;
+    closeMenu: string;
   };
   home: {
     tag: string;

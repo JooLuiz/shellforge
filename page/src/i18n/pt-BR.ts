@@ -38,6 +38,8 @@ export const ptBR: TranslationDictionary = {
     categoryTiming: "Tempo",
     categoryData: "Dados e E/S",
     categoryControlFlow: "Controle de fluxo",
+    openMenu: "Abrir menu",
+    closeMenu: "Fechar menu",
   },
   home: {
     tag: "ShellForge",
