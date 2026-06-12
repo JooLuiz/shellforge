@@ -12,6 +12,9 @@ const {
 } = require("../getConfig");
 const { getPackagedUserDataRoot } = require("../shellforgePaths");
 
+const RUNTIME_ROOT = path.resolve(__dirname, "..", "..");
+const RUNTIME_CONFIG_PATH = path.join(RUNTIME_ROOT, "config", "config.json");
+
 function createTempRoot(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
@@ -39,6 +42,25 @@ function withSavedEnv(envKeys, runTest) {
           process.env[envKey] = savedValue;
         }
       });
+    }
+  };
+}
+
+function withRuntimeConfigBackup(runTest) {
+  const hadRuntimeConfig = fs.existsSync(RUNTIME_CONFIG_PATH);
+  const runtimeConfigBackup = hadRuntimeConfig
+    ? fs.readFileSync(RUNTIME_CONFIG_PATH, "utf8")
+    : null;
+
+  return async () => {
+    try {
+      await runTest();
+    } finally {
+      if (hadRuntimeConfig && runtimeConfigBackup !== null) {
+        fs.writeFileSync(RUNTIME_CONFIG_PATH, runtimeConfigBackup, "utf8");
+      } else if (fs.existsSync(RUNTIME_CONFIG_PATH)) {
+        fs.unlinkSync(RUNTIME_CONFIG_PATH);
+      }
     }
   };
 }
@@ -124,5 +146,25 @@ test(
     process.env.SHELLFORGE_USER_DATA = envRoot;
 
     assert.equal(resolveUserDataRoot(), path.resolve(envRoot));
+  })
+);
+
+test(
+  "resolveUserDataRoot wrapper uses AppData when runtime config is missing",
+  withSavedEnv(["SHELLFORGE_USER_DATA", "APPDATA"], async () => {
+    delete process.env.SHELLFORGE_USER_DATA;
+
+    const appDataRoot = createTempRoot("shellforge-wrapper-appdata-");
+    const packagedUserDataRoot = getPackagedUserDataRoot(appDataRoot);
+    writeConfigAtRoot(packagedUserDataRoot, '{"actionRunner":{}}');
+    process.env.APPDATA = appDataRoot;
+
+    await withRuntimeConfigBackup(async () => {
+      if (fs.existsSync(RUNTIME_CONFIG_PATH)) {
+        fs.unlinkSync(RUNTIME_CONFIG_PATH);
+      }
+
+      assert.equal(resolveUserDataRoot(), packagedUserDataRoot);
+    })();
   })
 );
