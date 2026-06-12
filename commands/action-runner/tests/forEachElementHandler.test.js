@@ -250,7 +250,7 @@ test("forEachElement excludes entries matching excludeTextPatterns", async () =>
 test("forEachElement clickSelector clicks nested target including svg parent fallback", async () => {
   let clickedTarget = null;
   global.SVGElement = function SVGElement() {};
-  const svgTarget = Object.create(SVGElement.prototype);
+  const svgTarget = Object.create(global.SVGElement.prototype);
   svgTarget.click = () => {
     clickedTarget = "svg-child";
   };
