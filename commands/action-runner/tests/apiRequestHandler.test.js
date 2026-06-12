@@ -166,3 +166,106 @@ test("apiRequest does not attach body for OPTIONS requests", async (testContext)
   assert.strictEqual(capturedRequestOptions.method, "OPTIONS");
   assert.equal(capturedRequestOptions.body, undefined);
 });
+
+test("apiRequest supports query params basic auth string body and text responses", async (testContext) => {
+  let capturedUrl = "";
+  let capturedRequestOptions = null;
+  const mockResponse = createMockResponse({
+    status: 200,
+    headersMap: { "content-type": "text/plain" },
+    body: "plain-text-response",
+  });
+  mockResponse.json = async () => {
+    throw new Error("should not parse json");
+  };
+  mockResponse.text = async () => "plain-text-response";
+
+  testContext.mock.method(globalThis, "fetch", async (url, requestOptions) => {
+    capturedUrl = url;
+    capturedRequestOptions = requestOptions;
+    return mockResponse;
+  });
+
+  const runtimeContext = {};
+  const step = {
+    url: "https://api.example.com/search",
+    method: "post",
+    params: {
+      q: "shellforge",
+      tags: ["a", "b"],
+      ignored: null,
+    },
+    auth: {
+      type: "basic",
+      username: "user",
+      password: "secret",
+    },
+    body: "raw-body",
+    timeout: 1000,
+    storeAs: "searchResponse",
+  };
+
+  await handleApiRequest({}, step, noopLogInfo, runtimeContext);
+
+  assert.match(capturedUrl, /q=shellforge/);
+  assert.match(capturedUrl, /tags=a/);
+  assert.equal(capturedRequestOptions.body, "raw-body");
+  assert.equal(capturedRequestOptions.headers.Authorization, "Basic dXNlcjpzZWNyZXQ=");
+  assert.equal(runtimeContext.searchResponse.body, "plain-text-response");
+});
+
+test("apiRequest stringifies object bodies and sets json content type when missing", async (testContext) => {
+  let capturedRequestOptions = null;
+  const mockResponse = createMockResponse({
+    status: 201,
+    headersMap: { "content-type": "application/json" },
+    body: { created: true },
+  });
+
+  testContext.mock.method(globalThis, "fetch", async (_url, requestOptions) => {
+    capturedRequestOptions = requestOptions;
+    return mockResponse;
+  });
+
+  await handleApiRequest(
+    {},
+    {
+      method: "POST",
+      url: "https://api.example.com/items",
+      body: { name: "widget" },
+    },
+    noopLogInfo,
+    {}
+  );
+
+  assert.equal(capturedRequestOptions.headers["Content-Type"], "application/json");
+  assert.equal(capturedRequestOptions.body, JSON.stringify({ name: "widget" }));
+});
+
+test("apiRequest preserves an existing json content type header", async (testContext) => {
+  let capturedRequestOptions = null;
+  const mockResponse = createMockResponse({
+    status: 200,
+    headersMap: { "content-type": "application/json" },
+    body: { ok: true },
+  });
+
+  testContext.mock.method(globalThis, "fetch", async (_url, requestOptions) => {
+    capturedRequestOptions = requestOptions;
+    return mockResponse;
+  });
+
+  await handleApiRequest(
+    {},
+    {
+      method: "POST",
+      url: "https://api.example.com/items",
+      headers: { "Content-Type": "application/vnd.api+json" },
+      body: { name: "widget" },
+    },
+    noopLogInfo,
+    {}
+  );
+
+  assert.equal(capturedRequestOptions.headers["Content-Type"], "application/vnd.api+json");
+});

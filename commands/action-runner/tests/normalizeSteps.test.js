@@ -355,3 +355,181 @@ test("normalizeSteps converts legacy flat fields to default browser flow", () =>
   // Expected: legacy format is transformed into navigate/type/type/click.
   assert.deepEqual(steps.map((step) => step.action), ["navigate", "type", "type", "click"]);
 });
+
+test("normalizeSteps rejects empty steps array", () => {
+  assert.throws(
+    () => normalizeSteps({ steps: [] }, "empty-steps"),
+    /must define a non-empty "steps" array/
+  );
+});
+
+test("normalizeSteps rejects unknown action names", () => {
+  assert.throws(
+    () => normalizeSteps({ steps: [{ action: "unknownAction", value: "x" }] }, "unknown"),
+    /unknown action "unknownAction"/
+  );
+});
+
+test("normalizeSteps rejects setWebStorage without storage payloads", () => {
+  assert.throws(
+    () => normalizeSteps({ steps: [{ action: "setWebStorage" }] }, "set-web-storage-empty"),
+    /setWebStorage step requires at least one of "localStorage", "sessionStorage", or "cookies"/
+  );
+});
+
+test("normalizeSteps rejects apiRequest basic auth without credentials", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          steps: [
+            {
+              action: "apiRequest",
+              url: "https://example.com",
+              auth: { type: "basic", username: "user" },
+            },
+          ],
+        },
+        "api-request-auth"
+      ),
+    /requires "auth.username" and "auth.password"/
+  );
+});
+
+test("normalizeSteps rejects getArguments with invalid required type", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        { steps: [{ action: "getArguments", required: "ticket" }] },
+        "get-arguments-invalid-required"
+      ),
+    /getArguments "required" must be an array/
+  );
+});
+
+test("normalizeSteps rejects tryCatch without try steps", () => {
+  assert.throws(
+    () => normalizeSteps({ steps: [{ action: "tryCatch", try: [] }] }, "try-catch-empty"),
+    /tryCatch requires a non-empty "try" array/
+  );
+});
+
+test("normalizeSteps rejects ifElse with unsupported operator", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          steps: [
+            {
+              action: "ifElse",
+              left: "1",
+              operator: "contains",
+              right: "2",
+              then: [],
+            },
+          ],
+        },
+        "if-else-operator"
+      ),
+    /ifElse "operator" must be one of/
+  );
+});
+
+test("normalizeSteps rejects legacy config when required field is missing", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          url: "https://example.com/login",
+          usernameInput: "#email",
+          usernameValue: "user@example.com",
+          passwordInput: "#password",
+        },
+        "legacy-missing-field"
+      ),
+    /Legacy action config missing field "passwordValue"/
+  );
+});
+
+test("normalizeSteps rejects invalid step objects and missing action fields", () => {
+  assert.throws(
+    () => normalizeSteps({ steps: [null] }, "invalid-step-object"),
+    /step must be an object/
+  );
+
+  assert.throws(
+    () => normalizeSteps({ steps: [{ action: "" }] }, "missing-action"),
+    /missing or invalid "action"/
+  );
+});
+
+test("normalizeSteps validates ifElse else branch and tryCatch catch arrays", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          steps: [
+            {
+              action: "ifElse",
+              left: "1",
+              operator: "exists",
+              then: [],
+              else: "invalid",
+            },
+          ],
+        },
+        "if-else-invalid-else"
+      ),
+    /ifElse "else" must be an array/
+  );
+
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          steps: [
+            {
+              action: "tryCatch",
+              try: [{ action: "wait", ms: 0 }],
+              catch: "invalid",
+            },
+          ],
+        },
+        "try-catch-invalid-catch"
+      ),
+    /tryCatch "catch" must be an array/
+  );
+});
+
+test("normalizeSteps validates getArguments optional and defaults fields", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        { steps: [{ action: "getArguments", optional: "ticket" }] },
+        "get-arguments-invalid-optional"
+      ),
+    /getArguments "optional" must be an array/
+  );
+
+  assert.throws(
+    () =>
+      normalizeSteps(
+        { steps: [{ action: "getArguments", defaults: [] }] },
+        "get-arguments-invalid-defaults"
+      ),
+    /getArguments "defaults" must be an object/
+  );
+});
+
+test("normalizeSteps rejects forEachElement with empty sub-steps", () => {
+  assert.throws(
+    () =>
+      normalizeSteps(
+        {
+          steps: [{ action: "forEachElement", selector: ".row", steps: [] }],
+        },
+        "for-each-element-empty"
+      ),
+    /forEachElement requires a non-empty "steps" array/
+  );
+});

@@ -73,3 +73,45 @@ test("shell throws when command fails and ignoreExitCode is not set", async () =
     "must throw when command fails and ignoreExitCode is not set"
   );
 });
+
+test("shell joins commands array and supports encoded shell args", async () => {
+  const runtimeContext = {};
+  const loggedMessages = [];
+
+  await handleShell(
+    {},
+    {
+      commands: ["Write-Output hello", "Write-Output world"],
+      shellArgs: ["-NoProfile", "-NonInteractive"],
+      storeAs: "shellResult",
+    },
+    (message) => loggedMessages.push(message),
+    runtimeContext
+  );
+
+  assert.ok(runtimeContext.shellResult);
+  assert.match(loggedMessages.join("\n"), /Running shell command/);
+});
+
+test("shell logs stdout and stderr on ignored failure", async () => {
+  const loggedMessages = [];
+
+  await handleShell(
+    {},
+    {
+      command: "Write-Error 'boom'; exit 1",
+      ignoreExitCode: true,
+    },
+    (message) => loggedMessages.push(message),
+    {}
+  );
+
+  assert.ok(loggedMessages.some((message) => message.includes("stderr:")));
+});
+
+test("shell throws when neither command nor commands is provided at runtime", async () => {
+  await assert.rejects(
+    () => handleShell({}, {}, noopLogInfo, {}),
+    /shell step requires "command" or "commands"/
+  );
+});

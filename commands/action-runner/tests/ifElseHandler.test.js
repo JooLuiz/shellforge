@@ -98,3 +98,15 @@ test("ifElse skips both branches when arrays are empty", async () => {
 
   assert.equal(runStepsCalled, false);
 });
+
+test("evaluateCondition throws for unsupported operators", () => {
+  assert.throws(
+    () => evaluateCondition("1", "contains", "1"),
+    /unsupported operator "contains"/
+  );
+});
+
+test("evaluateCondition compares string operands when numeric coercion is not possible", () => {
+  assert.equal(evaluateCondition("abc", "eq", "abc"), true);
+  assert.equal(evaluateCondition("", "eq", "abc"), false);
+});
