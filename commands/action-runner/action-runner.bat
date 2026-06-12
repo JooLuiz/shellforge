@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 setlocal enabledelayedexpansion
 
 set JS_FILE="%~dp0\action-runner.js"

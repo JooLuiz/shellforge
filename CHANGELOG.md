@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-06-12
+
+### Fixed
+
+- `action-runner.bat` now runs `cd /d "%~dp0"` before invoking Node, so CLI aliases work from any terminal working directory (matching Run Now spawn behavior).
+
 ## [1.0.5] - 2026-06-12
 
 ### Fixed
