@@ -12,11 +12,16 @@ vi.mock("electron", () => ({
   app: appMock,
 }));
 
+vi.mock("./ensureShellforgeUserDataEnv", () => ({
+  ensureShellforgeUserDataEnvVar: vi.fn(),
+}));
+
 import {
   ensurePackagedUserData,
   getPackagedRuntimePath,
   getUserDataRepoRoot,
 } from "./packagedDataBootstrap";
+import { ensureShellforgeUserDataEnvVar } from "./ensureShellforgeUserDataEnv";
 import { SHELLFORGE_RUNTIME_VERSION_FILE } from "./shellforgeRuntimeLayout";
 
 function createRuntimeBundle(runtimeRoot: string, version: string): void {
@@ -71,6 +76,7 @@ describe("packagedDataBootstrap", () => {
     expect(fs.existsSync(path.join(userDataRoot, "nodejs"))).toBe(false);
     expect(getUserDataRepoRoot()).toBe(userDataRoot);
     expect(getPackagedRuntimePath()).toBe(bundledRuntimeRoot);
+    expect(ensureShellforgeUserDataEnvVar).toHaveBeenCalledWith(userDataRoot);
   });
 
   it("preserves config.json and updates runtime version marker on version change", () => {

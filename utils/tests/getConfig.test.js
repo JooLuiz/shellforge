@@ -92,6 +92,21 @@ test("resolveUserDataRootFromInputs uses runtime root when config exists there",
   );
 });
 
+test("resolveUserDataRootFromInputs uses packaged AppData root when runtime config is missing", () => {
+  const runtimeRoot = createTempRoot("shellforge-runtime-empty-");
+  const appDataRoot = createTempRoot("shellforge-appdata-config-");
+  const packagedUserDataRoot = getPackagedUserDataRoot(appDataRoot);
+
+  assert.equal(
+    resolveUserDataRootFromInputs({
+      envUserDataRoot: "",
+      runtimeRoot,
+      appDataPath: appDataRoot,
+    }),
+    packagedUserDataRoot
+  );
+});
+
 test("resolveUserDataRootFromInputs uses packaged AppData root when only AppData config exists", () => {
   const runtimeRoot = createTempRoot("shellforge-runtime-empty-");
   const appDataRoot = createTempRoot("shellforge-appdata-config-");
@@ -108,15 +123,14 @@ test("resolveUserDataRootFromInputs uses packaged AppData root when only AppData
   );
 });
 
-test("resolveUserDataRootFromInputs defaults to runtime root when no config exists", () => {
+test("resolveUserDataRootFromInputs defaults to runtime root when AppData is unavailable", () => {
   const runtimeRoot = createTempRoot("shellforge-runtime-default-");
-  const appDataRoot = createTempRoot("shellforge-appdata-empty-");
 
   assert.equal(
     resolveUserDataRootFromInputs({
       envUserDataRoot: "",
       runtimeRoot,
-      appDataPath: appDataRoot,
+      appDataPath: "",
     }),
     runtimeRoot
   );

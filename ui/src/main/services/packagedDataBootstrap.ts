@@ -1,6 +1,7 @@
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import { ensureShellforgeUserDataEnvVar } from "./ensureShellforgeUserDataEnv";
 import {
   PACKAGED_RUNTIME_RESOURCE_DIR,
   SHELLFORGE_RUNTIME_VERSION_FILE,
@@ -81,4 +82,6 @@ export function ensurePackagedUserData(): void {
   if (bundledVersion && bundledVersion !== installedVersion) {
     writeInstalledRuntimeVersion(userDataRepoRoot, bundledVersion);
   }
+
+  ensureShellforgeUserDataEnvVar(userDataRepoRoot);
 }

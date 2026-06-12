@@ -26,10 +26,7 @@ function resolveUserDataRootFromInputs({
   }
 
   if (typeof appDataPath === "string" && appDataPath.trim().length > 0) {
-    const packagedUserDataRoot = getPackagedUserDataRoot(appDataPath.trim());
-    if (hasConfigAtRoot(packagedUserDataRoot)) {
-      return packagedUserDataRoot;
-    }
+    return getPackagedUserDataRoot(appDataPath.trim());
   }
 
   return resolvedRuntimeRoot;
