@@ -1,6 +1,6 @@
 {
   "name": "shellforge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ShellForge - custom Windows PowerShell automation and commands",
   "license": "ISC",
   "author": "João Luiz de Castro",

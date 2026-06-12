@@ -8,6 +8,7 @@
  */
 
 const { getConfigs, logger, getArgValue, consts, createPuppeteerBrowser } = require("../../utils");
+const { resolveUserDataRoot } = require("../../utils/getConfig");
 const { normalizeSteps } = require("./normalizeSteps");
 const { runSteps } = require("./runSteps");
 const fs = require("fs");
@@ -19,12 +20,6 @@ const DEFAULT_VIEWPORT = {
   width: 1540,
   height: 700,
 };
-const RUNTIME_ROOT = path.resolve(__dirname, "../..");
-const USER_DATA_ROOT =
-  typeof process.env.SHELLFORGE_USER_DATA === "string" &&
-  process.env.SHELLFORGE_USER_DATA.trim().length > 0
-    ? path.resolve(process.env.SHELLFORGE_USER_DATA.trim())
-    : RUNTIME_ROOT;
 const PROFILE_BASE_DIRECTORY = ".shellforge-browser-profiles";
 
 const logError = logger("error", consts.identification.actionRunner);
@@ -120,7 +115,7 @@ function validateBrowserProfileName(browserProfile, actionName) {
 function getBrowserLaunchOverrides(
   actionConfig,
   actionName,
-  projectRoot = USER_DATA_ROOT
+  projectRoot = resolveUserDataRoot()
 ) {
   if (!actionConfig || typeof actionConfig !== "object") {
     return {};

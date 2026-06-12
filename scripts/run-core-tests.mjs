@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const CORE_TEST_ROOTS = [
   "commands/action-runner/tests",
   "command-lib/tests",
+  "utils/tests",
 ];
 
 const repoRootPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");

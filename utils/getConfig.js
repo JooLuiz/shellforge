@@ -1,13 +1,46 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { getPackagedUserDataRoot } = require("./shellforgePaths");
 
-function resolveUserDataRoot() {
-  const userDataRoot = process.env.SHELLFORGE_USER_DATA;
-  if (typeof userDataRoot === "string" && userDataRoot.trim().length > 0) {
-    return path.resolve(userDataRoot.trim());
+function getRuntimeRoot() {
+  return path.resolve(__dirname, "..");
+}
+
+function hasConfigAtRoot(rootPath) {
+  const configPath = path.join(rootPath, "config", "config.json");
+  return fs.existsSync(configPath);
+}
+
+function resolveUserDataRootFromInputs({
+  envUserDataRoot,
+  runtimeRoot,
+  appDataPath,
+}) {
+  if (typeof envUserDataRoot === "string" && envUserDataRoot.trim().length > 0) {
+    return path.resolve(envUserDataRoot.trim());
   }
 
-  return path.resolve(__dirname, "..");
+  const resolvedRuntimeRoot = path.resolve(runtimeRoot);
+  if (hasConfigAtRoot(resolvedRuntimeRoot)) {
+    return resolvedRuntimeRoot;
+  }
+
+  if (typeof appDataPath === "string" && appDataPath.trim().length > 0) {
+    const packagedUserDataRoot = getPackagedUserDataRoot(appDataPath.trim());
+    if (hasConfigAtRoot(packagedUserDataRoot)) {
+      return packagedUserDataRoot;
+    }
+  }
+
+  return resolvedRuntimeRoot;
+}
+
+function resolveUserDataRoot() {
+  return resolveUserDataRootFromInputs({
+    envUserDataRoot: process.env.SHELLFORGE_USER_DATA,
+    runtimeRoot: getRuntimeRoot(),
+    appDataPath: process.env.APPDATA,
+  });
 }
 
 function readConfigFile(configPath) {
@@ -26,4 +59,5 @@ async function getConfigs() {
 module.exports = {
   getConfigs,
   resolveUserDataRoot,
+  resolveUserDataRootFromInputs,
 };
