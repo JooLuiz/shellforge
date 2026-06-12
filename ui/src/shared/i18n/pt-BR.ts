@@ -88,6 +88,20 @@ export const ptBrDictionary: AppTranslationDictionary = {
   },
   scheduledTasks: {
     noSearchResults: "Nenhuma tarefa agendada corresponde à busca atual.",
+    privileges: {
+      title: "Privilégios de administrador necessários",
+      message:
+        "O ShellForge não pode ativar ou desativar tarefas agendadas do Windows enquanto estiver em execução sem privilégios de administrador.",
+      remediation:
+        "Feche o ShellForge, clique com o botão direito no atalho ou executável do app e selecione Executar como administrador.",
+      toggleError:
+        "Privilégios de administrador são necessários para ativar ou desativar tarefas agendadas do Windows. Reinicie o ShellForge como administrador.",
+    },
+    invalidActionName:
+      "O nome da tarefa deve usar apenas letras ASCII, números, espaços, hífens e underscores.",
+    toggleFailed: "Falha ao atualizar a tarefa agendada. Verifique o nome da tarefa e tente novamente.",
+    toggleRegistrationFailed:
+      "A tarefa agendada do Windows não foi registrada. Renomeie a tarefa para usar apenas caracteres ASCII e tente novamente.",
   },
   deleteConfirm: {
     cancel: "Cancelar",

@@ -66,6 +66,15 @@ export interface AppTranslationDictionary {
   };
   scheduledTasks: {
     noSearchResults: string;
+    privileges: {
+      title: string;
+      message: string;
+      remediation: string;
+      toggleError: string;
+    };
+    invalidActionName: string;
+    toggleFailed: string;
+    toggleRegistrationFailed: string;
   };
   deleteConfirm: {
     cancel: string;

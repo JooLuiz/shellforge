@@ -1,6 +1,11 @@
 import type { ScheduledTaskInput } from "../../../../shared/types";
+import {
+  getScheduledTaskActionNameFormatError,
+  validateScheduledTaskActionName,
+} from "../../../../shared/scheduledTaskActionName";
 import { ModalCloseButton } from "../../../components/ModalCloseButton";
 import { useModalDismiss } from "../../../hooks/useModalDismiss";
+import { useTranslation } from "../../../i18n";
 import type { ActionArgumentSchema } from "../../../../shared/actionArgumentSchema";
 import type { ScheduledCommandDraft } from "../../../../shared/scheduledTaskCommand";
 import { WEEKDAYS } from "../constants";
@@ -41,7 +46,16 @@ export function ScheduledTaskModal({
   onUpdateDraft,
   saveButtonLabel,
 }: ScheduledTaskModalProps): JSX.Element {
+  const { t } = useTranslation();
   const { backdropProps, panelProps } = useModalDismiss(onClose);
+  const actionNameFormatError = getScheduledTaskActionNameFormatError(draft.actionName);
+  const actionNameValidationError = actionNameFormatError
+    ? t.scheduledTasks.invalidActionName
+    : null;
+  const isSaveDisabled =
+    isSaving ||
+    validateScheduledTaskActionName(draft.actionName) !== null ||
+    (modalMode === "edit" && editSaveStatus === "saved");
 
   return (
     <div className="modal-backdrop" {...backdropProps}>
@@ -65,6 +79,9 @@ export function ScheduledTaskModal({
                   }
                 />
               </label>
+              {actionNameValidationError ? (
+                <div className="error-banner">{actionNameValidationError}</div>
+              ) : null}
               <ScheduledTaskCommandSection
                 argumentSchema={argumentSchema}
                 commandDraft={commandDraft}
@@ -118,7 +135,7 @@ export function ScheduledTaskModal({
               type="button"
               className="button button-teal"
               onClick={() => void onPersist()}
-              disabled={isSaving || (modalMode === "edit" && editSaveStatus === "saved")}
+              disabled={isSaveDisabled}
             >
               {saveButtonLabel}
             </button>

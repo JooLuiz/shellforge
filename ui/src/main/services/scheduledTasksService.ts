@@ -13,6 +13,14 @@ import { listScheduledTaskRecords, parseScheduledTaskContent } from "./ps1Parser
 import { buildScheduledTaskFileName, generateScheduledTaskScript } from "./ps1Template";
 import { getRepoPaths } from "./repoPaths";
 import { resolveScheduledTaskScriptPath } from "./scheduledTaskPathUtils";
+import { validateScheduledTaskActionName } from "../../shared/scheduledTaskActionName";
+import {
+  outputReportsRegistrationFailure,
+  outputReportsRegistrationSuccess,
+  outputRequiresAdministrator,
+  SCHEDULED_TASK_ADMIN_REQUIRED_ERROR,
+  SCHEDULED_TASK_REGISTRATION_FAILED_ERROR,
+} from "./scheduledTaskScriptErrors";
 
 function validateTime(timeValue: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(timeValue);
@@ -21,6 +29,11 @@ function validateTime(timeValue: string): boolean {
 function validateScheduledTaskInput(input: ScheduledTaskInput): void {
   if (input.actionName.trim().length === 0) {
     throw new Error("Action name cannot be empty.");
+  }
+
+  const actionNameValidationError = validateScheduledTaskActionName(input.actionName);
+  if (actionNameValidationError) {
+    throw new Error(actionNameValidationError);
   }
 
   if (input.triggerTimes.length === 0) {
@@ -103,6 +116,39 @@ function toErrorMessage(error: unknown): string {
   return "Unknown command execution error";
 }
 
+function extractExecOutput(error: unknown): { stdout: string; stderr: string } {
+  if (error && typeof error === "object") {
+    const execError = error as { stdout?: string | Buffer; stderr?: string | Buffer };
+    return {
+      stdout: String(execError.stdout ?? ""),
+      stderr: String(execError.stderr ?? ""),
+    };
+  }
+
+  return { stdout: "", stderr: "" };
+}
+
+function assertScheduledTaskScriptSucceeded(
+  stdout: string,
+  stderr: string,
+  fileName: string,
+  isEnabled: boolean,
+): void {
+  if (outputRequiresAdministrator(stdout, stderr)) {
+    throw new Error(SCHEDULED_TASK_ADMIN_REQUIRED_ERROR);
+  }
+
+  if (outputReportsRegistrationFailure(stdout, stderr)) {
+    throw new Error(
+      `Failed to ${isEnabled ? "enable" : "disable"} scheduled task from "${fileName}". The Windows scheduled task could not be created.`,
+    );
+  }
+
+  if (isEnabled && !outputReportsRegistrationSuccess(stdout, stderr)) {
+    throw new Error(SCHEDULED_TASK_REGISTRATION_FAILED_ERROR);
+  }
+}
+
 export function buildScheduledTaskCommandArgs(scriptPath: string, isEnabled: boolean): string[] {
   const commandArgs = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath];
   if (!isEnabled) {
@@ -120,26 +166,50 @@ function runScheduledTaskScript(fileName: string, isEnabled: boolean): void {
 
   const commandArgs = buildScheduledTaskCommandArgs(scriptPath, isEnabled);
 
+  let stdout = "";
+  let stderr = "";
+
   try {
-    execFileSync("powershell", commandArgs, {
+    stdout = execFileSync("powershell", commandArgs, {
       encoding: "utf8",
       stdio: "pipe",
     });
   } catch (error) {
+    const extractedOutput = extractExecOutput(error);
+    stdout = extractedOutput.stdout;
+    stderr = extractedOutput.stderr;
+    assertScheduledTaskScriptSucceeded(stdout, stderr, fileName, isEnabled);
     throw new Error(
       `Failed to ${isEnabled ? "enable" : "disable"} scheduled task from "${fileName}". ${toErrorMessage(
-        error
-      )}`
+        error,
+      )}`,
     );
   }
+
+  assertScheduledTaskScriptSucceeded(stdout, stderr, fileName, isEnabled);
 }
 
 export async function listScheduledTasks(): Promise<ScheduledTaskRecord[]> {
   const registeredTaskNames = await listRegisteredTaskNames();
-  return listScheduledTaskRecords().map((taskRecord) => ({
-    ...taskRecord,
-    isEnabled: registeredTaskNames.has(taskRecord.actionName),
-  }));
+  return listScheduledTaskRecords().map((taskRecord) => {
+    const actionNameError =
+      taskRecord.parseError === undefined
+        ? validateScheduledTaskActionName(taskRecord.actionName) ?? undefined
+        : undefined;
+
+    return {
+      ...taskRecord,
+      actionNameError,
+      isEnabled: registeredTaskNames.has(taskRecord.actionName),
+    };
+  });
+}
+
+function readActionNameFromScript(fileName: string): string {
+  const { scheduledTasksDir } = getRepoPaths();
+  const scriptPath = resolveScheduledTaskScriptPath(scheduledTasksDir, fileName);
+  const scriptContent = fs.readFileSync(scriptPath, "utf8");
+  return parseScheduledTaskContent(fileName, scriptContent).actionName;
 }
 
 function readPreviousActionName(
@@ -218,6 +288,19 @@ export function deleteScheduledTask(fileName: string): void {
   }
 }
 
-export function toggleScheduledTask(fileName: string, isEnabled: boolean): void {
+export async function toggleScheduledTask(fileName: string, isEnabled: boolean): Promise<void> {
+  const actionName = readActionNameFromScript(fileName);
+  const actionNameValidationError = validateScheduledTaskActionName(actionName);
+  if (actionNameValidationError) {
+    throw new Error(actionNameValidationError);
+  }
+
   runScheduledTaskScript(fileName, isEnabled);
+
+  if (isEnabled) {
+    const registeredTaskNames = await listRegisteredTaskNames();
+    if (!registeredTaskNames.has(actionName)) {
+      throw new Error(SCHEDULED_TASK_REGISTRATION_FAILED_ERROR);
+    }
+  }
 }

@@ -7,6 +7,7 @@ import {
   saveScheduledTask,
   toggleScheduledTask,
 } from "../services/scheduledTasksService";
+import { getScheduledTaskPrivilegesStatus } from "../services/windowsPrivileges";
 
 export function registerScheduledTasksIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.scheduledTasksList, async () => {
@@ -23,8 +24,12 @@ export function registerScheduledTasksIpcHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.scheduledTasksToggle,
-    (_event, fileName: string, isEnabled: boolean) => {
-      toggleScheduledTask(fileName, isEnabled);
-    }
+    async (_event, fileName: string, isEnabled: boolean) => {
+      await toggleScheduledTask(fileName, isEnabled);
+    },
   );
+
+  ipcMain.handle(IPC_CHANNELS.scheduledTasksPrivileges, () => {
+    return getScheduledTaskPrivilegesStatus();
+  });
 }

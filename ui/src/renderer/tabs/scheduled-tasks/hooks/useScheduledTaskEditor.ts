@@ -6,6 +6,7 @@ import type {
   ScheduledTaskRecord,
 } from "../../../../shared/types";
 import type { ScheduledCommandDraft } from "../../../../shared/scheduledTaskCommand";
+import { validateScheduledTaskActionName } from "../../../../shared/scheduledTaskActionName";
 import { EDIT_AUTOSAVE_DELAY_MS, EMPTY_FORM } from "../constants";
 import type { ScheduledTaskEditorState } from "../types";
 import { getSaveButtonLabel, serializeTaskDraft } from "../utils";
@@ -200,6 +201,16 @@ export function useScheduledTaskEditor({
     setErrorMessage(null);
     if (modalMode === "edit") {
       setEditSaveStatus("saving");
+    }
+
+    const actionNameValidationError = validateScheduledTaskActionName(draft.actionName);
+    if (actionNameValidationError) {
+      setErrorMessage(actionNameValidationError);
+      if (modalMode === "edit") {
+        setEditSaveStatus("dirty");
+      }
+      setIsSaving(false);
+      return;
     }
 
     try {
