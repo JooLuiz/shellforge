@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-06-12
+
+### Fixed
+
+- CLI custom actions now resolve user data from `%APPDATA%/ShellForge/shellforge-data/` when `SHELLFORGE_USER_DATA` is not set, fixing profile aliases such as `lancar-horas` on packaged installs.
+
 ## [1.0.2] - 2026-06-12
 
 ### Fixed
