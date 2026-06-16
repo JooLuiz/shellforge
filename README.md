@@ -471,6 +471,10 @@ Only enable commands and load action configs you trust. Review shared config fil
 
 See also [`commands/README.md`](commands/README.md).
 
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3) — see the [LICENSE](LICENSE) file for details.
+
 # Other versions
 
 [Readme in Portuguese (PT-BR)](README.pt-br.md)

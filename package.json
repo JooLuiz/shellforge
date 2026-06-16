@@ -1,8 +1,8 @@
 {
   "name": "shellforge",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "ShellForge - custom Windows PowerShell automation and commands",
-  "license": "ISC",
+  "license": "AGPL-3.0-only",
   "author": "João Luiz de Castro",
   "scripts": {
     "test": "node scripts/run-core-tests.mjs",

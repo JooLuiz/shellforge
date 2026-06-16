@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-16
+
+### Changed
+
+- Project license updated to GNU Affero General Public License v3.0 (AGPL-3.0-only); root, UI, and page `package.json` license fields now reflect AGPL.
+- Replaced root `LICENSE` with the official AGPLv3 text and `Copyright (C) 2026 João Luiz de Castro`.
+- Added license sections to [README.md](README.md) (English) and [README.pt-br.md](README.pt-br.md) (Portuguese).
+- Added AGPL copyright headers to ShellForge entry points and core runtime sources (Electron main/preload/renderer, docs site entry, action-runner, utils, and command library).
+
 ## [1.0.6] - 2026-06-12
 
 ### Fixed
