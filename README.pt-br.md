@@ -474,6 +474,10 @@ Ative apenas comandos e carregue configs de ações em que você confia. Revise 
 
 Veja também [`commands/README.md`](commands/README.md).
 
+## Licença
+
+Este projeto está licenciado sob a Licença Pública Geral Affero GNU v3.0 (AGPLv3) - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
 # Other versions
 
 [Readme em Inglês (EN)](README.md)

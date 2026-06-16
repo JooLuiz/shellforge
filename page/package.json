@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "AGPL-3.0-only",
+  "author": "João Luiz de Castro",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

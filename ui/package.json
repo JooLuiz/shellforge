@@ -1,7 +1,8 @@
 {
   "name": "shellforge-ui",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "ShellForge desktop manager for Windows PowerShell automation",
+  "license": "AGPL-3.0-only",
   "author": "João Luiz de Castro",
   "private": true,
   "main": "out/main/index.js",
